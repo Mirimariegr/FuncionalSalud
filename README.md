@@ -12,7 +12,7 @@ npm run dev        # http://localhost:5173
 npm run build      # genera dist/ (estático, se puede servir desde cualquier hosting)
 ```
 
-Al hacer push a `main`, el workflow `.github/workflows/deploy.yml` publica la demo en GitHub Pages (hay que activar *Settings → Pages → Source: GitHub Actions* una vez).
+Al hacer push a `main`, el workflow `.github/workflows/deploy.yml` publica la demo en la rama `gh-pages` (en *Settings → Pages* la fuente debe ser *Deploy from a branch → gh-pages / (root)*). Demo: https://mirimariegr.github.io/FuncionalSalud/
 
 ## Qué incluye
 
