@@ -143,7 +143,15 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
       }
       setInterim(partial.trim())
     }
-    rec.onerror = (e) => { if (e.error !== 'no-speech') setMicError(`Transcripción interrumpida (${e.error}).`) }
+    rec.onerror = (e) => {
+      const msg: Record<string, string> = {
+        'not-allowed': 'El navegador ha bloqueado el micrófono. Permítelo en el icono del candado de la barra de direcciones.',
+        'service-not-allowed': 'Este navegador no permite la transcripción. Usa Google Chrome o el modo demostración.',
+        network: 'No hay conexión con el servicio de transcripción del navegador. Comprueba la conexión o usa el modo demostración.',
+        'audio-capture': 'No se detecta ningún micrófono.',
+      }
+      if (e.error !== 'no-speech' && e.error !== 'aborted') setMicError(msg[e.error] ?? `Transcripción interrumpida (${e.error}).`)
+    }
     // El reconocimiento se corta solo tras silencios: se relanza mientras dure la sesión
     rec.onend = () => { if (recRef.current === rec && !pausedRef.current) try { rec.start() } catch { /* ignorado */ } }
     recRef.current = rec
@@ -177,7 +185,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
   const finish = () => {
     stopMic()
     const transcript = lines.map((l) => `${l.who}: ${l.text}`).join('\n')
-    const sum = mode === 'demo' && lines.length > 0 ? script.summary : summarizeTranscript(lines.map((l) => l.text).join(' '), svc.name)
+    const sum = mode === 'demo' && lines.length > 0 ? script.summary : summarizeTranscript(lines.map((l) => l.text), svc.name)
     setF({
       reason: sum.reason,
       observations: sum.observations,

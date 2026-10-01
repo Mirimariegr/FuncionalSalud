@@ -4,7 +4,7 @@ import { AlertTriangle, CalendarClock, Mic, Clock, DoorOpen, History, MapPin, St
 import { useRole, useStore } from '../store'
 import { apptStatus, apptTransitions } from '../lib/labels'
 import { canEdit } from '../lib/permissions'
-import { atTime, fDateTime, fLong, fTime, pad, toDateKey } from '../lib/utils'
+import { atTime, fDateTime, fLong, fTime, pad, sameDay, toDateKey } from '../lib/utils'
 import type { Appointment, AppointmentStatus } from '../types'
 import { Avatar, Badge, Button, Field, Input, Modal, Select } from './ui'
 import { SessionRecorder } from './SessionRecorder'
@@ -314,8 +314,8 @@ export function AppointmentDetailModal({ appt, onClose }: { appt: Appointment | 
                 {s === 'en_curso' && clinician ? 'Iniciar atención · grabar y resumir' : actionLabel[s] ?? apptStatus[s].label}
               </Button>
             ))}
-            {a.status === 'en_curso' && clinician && (
-              <Button size="sm" icon={Mic} onClick={() => setSession(true)}>Grabar y resumir sesión</Button>
+            {(a.status === 'en_curso' || (a.status === 'pendiente' && sameDay(a.start, new Date()))) && clinician && (
+              <Button size="sm" icon={Mic} onClick={() => setSession(true)}>{a.status === 'en_curso' ? 'Grabar y resumir sesión' : 'Iniciar atención · grabar y resumir'}</Button>
             )}
             {['pendiente', 'confirmada', 'replanificacion', 'no_presentada'].includes(a.status) && (
               <Button size="sm" variant="secondary" icon={CalendarClock} onClick={() => setMode('reschedule')}>Replanificar</Button>
