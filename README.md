@@ -23,6 +23,7 @@ Al hacer push a `main`, el workflow `.github/workflows/deploy.yml` publica la de
 | Inicio | KPIs del día, agenda de hoy, alertas (replanificaciones, consentimientos caducados o por caducar, revisiones vencidas), tareas prioritarias y ocupación por profesional. |
 | Agenda | Vista día (columnas por profesional) y semana. Crear citas pulsando un hueco, con validación de solapes de profesional, sala y paciente. Cambios de estado según las reglas del §7.2 y replanificación trazada. |
 | Pacientes | Búsqueda (también global con `Ctrl K`), alta con **detección de duplicados**, exportación CSV auditada. |
+| Mensajes | Chat con los pacientes y solicitudes por formulario (citas, facturas, documentación, datos personales), con estado abierta o resuelta. La ficha permite editar teléfono, email y dirección. |
 | Ficha 360º | Cabecera con alertas (alergias, datos declarados pendientes, consentimientos, tutor legal), resumen, expediente clínico (alergias, medicación, antecedentes, episodios), citas, tratamientos, documentos, consentimientos, económico y **línea temporal** filtrable. |
 | Episodios | Registro de visita con notas internas, juicio clínico, plan, resumen publicable y próxima acción (genera tarea). |
 | Sesión grabada | Al pulsar «Iniciar atención» el profesional graba la consulta (modo demostración o micrófono real en Chrome/Edge), se transcribe y al finalizar se propone la nota clínica para revisar y guardar en el historial. |
