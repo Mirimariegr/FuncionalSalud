@@ -83,10 +83,15 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
     let analyser: AnalyserNode | null = null
     let ctx: AudioContext | null = null
     if (mode === 'mic' && streamRef.current) {
-      ctx = new AudioContext()
-      analyser = ctx.createAnalyser()
-      analyser.fftSize = 64
-      ctx.createMediaStreamSource(streamRef.current).connect(analyser)
+      // Si el navegador no deja analizar el audio, se usan ondas simuladas
+      try {
+        ctx = new AudioContext()
+        analyser = ctx.createAnalyser()
+        analyser.fftSize = 64
+        ctx.createMediaStreamSource(streamRef.current).connect(analyser)
+      } catch {
+        analyser = null
+      }
     }
     const data = new Uint8Array(32)
     const tick = () => {
@@ -98,7 +103,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
       raf = window.setTimeout(tick, 90) as unknown as number
     }
     tick()
-    return () => { clearTimeout(raf); ctx?.close() }
+    return () => { clearTimeout(raf); ctx?.close().catch(() => undefined) }
   }, [step, mode])
 
   useEffect(() => endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }), [lines.length, interim])
@@ -117,6 +122,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
       return false
     }
     try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('sin getUserMedia')
       streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true })
     } catch {
       setMicError('No se ha podido acceder al micrófono. Revisa los permisos del navegador.')
@@ -130,16 +136,24 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
       let partial = ''
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i]
-        if (r.isFinal) setLines((l) => [...l, { who: 'Profesional', text: r[0].transcript.trim() }])
-        else partial += r[0].transcript
+        const text = r?.[0]?.transcript?.trim() ?? ''
+        if (!text) continue
+        if (r.isFinal) setLines((l) => [...l, { who: 'Profesional', text }])
+        else partial += `${text} `
       }
-      setInterim(partial)
+      setInterim(partial.trim())
     }
     rec.onerror = (e) => { if (e.error !== 'no-speech') setMicError(`Transcripción interrumpida (${e.error}).`) }
     // El reconocimiento se corta solo tras silencios: se relanza mientras dure la sesión
     rec.onend = () => { if (recRef.current === rec && !pausedRef.current) try { rec.start() } catch { /* ignorado */ } }
     recRef.current = rec
-    rec.start()
+    try {
+      rec.start()
+    } catch {
+      setMicError('No se ha podido iniciar la transcripción. Prueba el modo demostración.')
+      stopMic()
+      return false
+    }
     return true
   }
 

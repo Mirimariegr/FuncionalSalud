@@ -39,6 +39,7 @@ import { ConsentDetailModal, DocumentViewer, EpisodeModal, SendConsentModal, Tre
 import { BudgetModal, PaymentModal } from '../../components/BillingDialogs'
 import { isActive, NewPrescriptionModal, PrescriptionCard } from '../../components/Prescriptions'
 import { SessionRecorder } from '../../components/SessionRecorder'
+import { ErrorBoundary } from '../../components/ErrorBoundary'
 import type { Patient } from '../../types'
 import type { Allergy, Appointment, Consent, DocumentItem, Medication, PatientStatus, Treatment } from '../../types'
 
@@ -511,7 +512,7 @@ export default function PatientDetail() {
       <MedicationModal open={modal === 'med'} onClose={() => setModal(null)} patientId={p.id} />
       <NewPrescriptionModal open={modal === 'rx'} onClose={() => setModal(null)} patientId={p.id} />
       <ContactModal open={modal === 'contact'} onClose={() => setModal(null)} patient={p} />
-      {sessionAppt && <SessionRecorder appt={sessionAppt} onClose={() => { setSessionAppt(null); setTab('expediente') }} />}
+      {sessionAppt && <ErrorBoundary onReset={() => setSessionAppt(null)}><SessionRecorder appt={sessionAppt} onClose={() => { setSessionAppt(null); setTab('expediente') }} /></ErrorBoundary>}
       <AppointmentDetailModal appt={apptDetail} onClose={() => setApptDetail(null)} />
       <DocumentViewer doc={docView} onClose={() => setDocView(null)} readOnly={!canEdit(role, 'documentos')} />
       <ConsentDetailModal consent={consentView} onClose={() => setConsentView(null)} />

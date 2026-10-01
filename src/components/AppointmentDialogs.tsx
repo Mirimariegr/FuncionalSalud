@@ -8,6 +8,7 @@ import { atTime, fDateTime, fLong, fTime, pad, toDateKey } from '../lib/utils'
 import type { Appointment, AppointmentStatus } from '../types'
 import { Avatar, Badge, Button, Field, Input, Modal, Select } from './ui'
 import { SessionRecorder } from './SessionRecorder'
+import { ErrorBoundary } from './ErrorBoundary'
 
 export function NewAppointmentModal({
   open,
@@ -221,7 +222,7 @@ export function AppointmentDetailModal({ appt, onClose }: { appt: Appointment | 
   }, [appt])
 
   if (!appt || !current) return null
-  if (session) return <SessionRecorder appt={current} onClose={() => { setSession(false); onClose() }} />
+  if (session) return <ErrorBoundary onReset={() => { setSession(false); onClose() }}><SessionRecorder appt={current} onClose={() => { setSession(false); onClose() }} /></ErrorBoundary>
   const a = current
   const clinician = canEdit(role, 'clinico')
   const p = patients.find((x) => x.id === a.patientId)!

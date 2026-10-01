@@ -27,6 +27,7 @@ import { can, type Module } from '../lib/permissions'
 import { roleLabel } from '../lib/labels'
 import { cx, normalize, todayKey } from '../lib/utils'
 import { Avatar, Badge } from './ui'
+import { ErrorBoundary } from './ErrorBoundary'
 
 const nav: { to: string; label: string; icon: LucideIcon; module: Module; group: string }[] = [
   { to: '/app', label: 'Inicio', icon: LayoutDashboard, module: 'dashboard', group: 'Operativa' },
@@ -158,7 +159,7 @@ export default function StaffLayout() {
         </header>
         <main className="scroll-thin flex-1 overflow-y-auto">
           <div key={location.pathname} className="animate-fade-up mx-auto max-w-[1400px] p-4 sm:p-6 lg:p-8">
-            {allowed ? <Outlet /> : <Forbidden />}
+            <ErrorBoundary key={location.pathname}>{allowed ? <Outlet /> : <Forbidden />}</ErrorBoundary>
           </div>
         </main>
       </div>

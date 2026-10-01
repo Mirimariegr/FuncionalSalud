@@ -3,6 +3,7 @@ import { CalendarDays, Euro, FileSignature, FileText, HeartPulse, Home, LogOut, 
 import { useCurrentPatient, useStore } from '../store'
 import { cx } from '../lib/utils'
 import { Avatar } from './ui'
+import { ErrorBoundary } from './ErrorBoundary'
 
 const items = [
   { to: '/portal', label: 'Inicio', icon: Home },
@@ -50,7 +51,7 @@ export default function PatientLayout() {
         </nav>
       </header>
       <main key={location.pathname} className="animate-fade-up mx-auto max-w-5xl px-4 py-6 sm:py-8">
-        <Outlet />
+        <ErrorBoundary key={location.pathname}><Outlet /></ErrorBoundary>
       </main>
       {/* Navegación móvil */}
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom,0px)] md:hidden">
