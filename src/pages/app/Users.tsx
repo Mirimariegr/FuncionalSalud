@@ -85,7 +85,7 @@ export default function Users() {
                 </Select>
               </Field>
             )}
-            <Field label="Centros">
+            <Field label="Centros" group>
               <div className="space-y-1.5">
                 {centers.map((c) => (
                   <label key={c.id} className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-brand-600" checked={edit.centerIds.includes(c.id)} onChange={(e) => setEdit({ ...edit, centerIds: e.target.checked ? [...edit.centerIds, c.id] : edit.centerIds.filter((x) => x !== c.id) })} />{c.name}</label>
@@ -100,7 +100,7 @@ export default function Users() {
 }
 
 const patientAccess: Record<Module, string> = {
-  dashboard: 'Inicio portal', agenda: 'Consultar / solicitar cambios', pacientes: 'Consultar / editar propios', clinico: 'Publicados', tareas: '—',
+  dashboard: 'Inicio portal', agenda: 'Consultar / solicitar cambios', pacientes: 'Consultar / editar propios', clinico: 'Publicados', tareas: '—', mensajes: 'Chat y solicitudes',
   documentos: 'Publicados', consentimientos: 'Aceptar / revocar', tratamientos: 'Autorizados', economico: 'Consultar / aceptar / pagar', informes: '—',
   configuracion: '—', usuarios: '—', auditoria: 'Actividad propia',
 }

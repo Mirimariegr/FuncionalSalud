@@ -6,6 +6,7 @@ export type Module =
   | 'pacientes'
   | 'clinico'
   | 'tareas'
+  | 'mensajes'
   | 'documentos'
   | 'consentimientos'
   | 'tratamientos'
@@ -23,6 +24,7 @@ export const moduleLabel: Record<Module, string> = {
   pacientes: 'Pacientes (datos administrativos)',
   clinico: 'Datos clínicos / expediente',
   tareas: 'Tareas y alertas',
+  mensajes: 'Mensajes con pacientes',
   documentos: 'Documentos',
   consentimientos: 'Consentimientos',
   tratamientos: 'Tratamientos',
@@ -36,32 +38,32 @@ export const moduleLabel: Record<Module, string> = {
 /** Matriz de acceso basada en el Anexo A del funcional. */
 export const matrix: Record<Role, Record<Module, Access>> = {
   admin: {
-    dashboard: 'editar', agenda: 'editar', pacientes: 'editar', clinico: 'consultar', tareas: 'editar', documentos: 'editar',
+    dashboard: 'editar', agenda: 'editar', pacientes: 'editar', clinico: 'consultar', tareas: 'editar', mensajes: 'editar', documentos: 'editar',
     consentimientos: 'editar', tratamientos: 'consultar', economico: 'editar', informes: 'consultar', configuracion: 'editar',
     usuarios: 'editar', auditoria: 'consultar',
   },
   direccion: {
-    dashboard: 'consultar', agenda: 'consultar', pacientes: 'consultar', clinico: 'limitado', tareas: 'consultar', documentos: 'consultar',
+    dashboard: 'consultar', agenda: 'consultar', pacientes: 'consultar', clinico: 'limitado', tareas: 'consultar', mensajes: 'consultar', documentos: 'consultar',
     consentimientos: 'consultar', tratamientos: 'consultar', economico: 'consultar', informes: 'consultar', configuracion: 'consultar',
     usuarios: 'consultar', auditoria: 'consultar',
   },
   recepcion: {
-    dashboard: 'editar', agenda: 'editar', pacientes: 'editar', clinico: 'limitado', tareas: 'editar', documentos: 'limitado',
+    dashboard: 'editar', agenda: 'editar', pacientes: 'editar', clinico: 'limitado', tareas: 'editar', mensajes: 'editar', documentos: 'limitado',
     consentimientos: 'editar', tratamientos: 'consultar', economico: 'consultar', informes: 'no', configuracion: 'no',
     usuarios: 'no', auditoria: 'no',
   },
   sanitario: {
-    dashboard: 'editar', agenda: 'editar', pacientes: 'consultar', clinico: 'editar', tareas: 'editar', documentos: 'editar',
+    dashboard: 'editar', agenda: 'editar', pacientes: 'consultar', clinico: 'editar', tareas: 'editar', mensajes: 'consultar', documentos: 'editar',
     consentimientos: 'editar', tratamientos: 'editar', economico: 'limitado', informes: 'no', configuracion: 'no',
     usuarios: 'no', auditoria: 'limitado',
   },
   facturacion: {
-    dashboard: 'consultar', agenda: 'no', pacientes: 'consultar', clinico: 'no', tareas: 'editar', documentos: 'limitado',
+    dashboard: 'consultar', agenda: 'no', pacientes: 'consultar', clinico: 'no', tareas: 'editar', mensajes: 'editar', documentos: 'limitado',
     consentimientos: 'limitado', tratamientos: 'consultar', economico: 'editar', informes: 'consultar', configuracion: 'no',
     usuarios: 'no', auditoria: 'limitado',
   },
   privacidad: {
-    dashboard: 'consultar', agenda: 'no', pacientes: 'consultar', clinico: 'no', tareas: 'consultar', documentos: 'consultar',
+    dashboard: 'consultar', agenda: 'no', pacientes: 'consultar', clinico: 'no', tareas: 'consultar', mensajes: 'no', documentos: 'consultar',
     consentimientos: 'consultar', tratamientos: 'no', economico: 'no', informes: 'no', configuracion: 'no',
     usuarios: 'consultar', auditoria: 'consultar',
   },

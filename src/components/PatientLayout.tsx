@@ -1,16 +1,18 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { CalendarDays, Euro, FileSignature, FileText, HeartPulse, Home, LogOut, Activity, UserRound } from 'lucide-react'
+import { CalendarDays, Euro, FileSignature, FileText, HeartPulse, Home, LogOut, Activity, MessageCircle, Pill, UserRound } from 'lucide-react'
 import { useCurrentPatient, useStore } from '../store'
 import { cx } from '../lib/utils'
 import { Avatar } from './ui'
 
 const items = [
   { to: '/portal', label: 'Inicio', icon: Home },
-  { to: '/portal/citas', label: 'Mis citas', icon: CalendarDays },
+  { to: '/portal/citas', label: 'Citas', icon: CalendarDays },
+  { to: '/portal/recetas', label: 'Recetas', icon: Pill },
+  { to: '/portal/mensajes', label: 'Mensajes', icon: MessageCircle },
   { to: '/portal/documentos', label: 'Documentos', icon: FileText },
   { to: '/portal/consentimientos', label: 'Consentimientos', icon: FileSignature },
   { to: '/portal/tratamientos', label: 'Tratamientos', icon: Activity },
-  { to: '/portal/pagos', label: 'Presupuestos y pagos', icon: Euro },
+  { to: '/portal/pagos', label: 'Pagos', icon: Euro },
   { to: '/portal/datos', label: 'Mis datos', icon: UserRound },
 ]
 
@@ -18,6 +20,7 @@ export default function PatientLayout() {
   const p = useCurrentPatient()!
   const logout = useStore((s) => s.logout)
   const pendingConsents = useStore((s) => s.consents.filter((c) => c.patientId === p.id && c.status === 'pendiente').length)
+  const unread = useStore((s) => s.conversations.filter((c) => c.patientId === p.id && c.unreadPatient).length)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -41,6 +44,7 @@ export default function PatientLayout() {
             <NavLink key={i.to} to={i.to} end={i.to === '/portal'} className={({ isActive }) => cx('-mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium', isActive ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800')}>
               <i.icon className="h-4 w-4" />{i.label}
               {i.to === '/portal/consentimientos' && pendingConsents > 0 && <span className="rounded-full bg-amber-500 px-1.5 text-[10px] font-semibold text-white">{pendingConsents}</span>}
+              {i.to === '/portal/mensajes' && unread > 0 && <span className="rounded-full bg-brand-600 px-1.5 text-[10px] font-semibold text-white">{unread}</span>}
             </NavLink>
           ))}
         </nav>
@@ -49,11 +53,12 @@ export default function PatientLayout() {
         <Outlet />
       </main>
       {/* Navegación móvil */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white md:hidden">
-        {items.filter((i) => i.to !== '/portal/tratamientos' && i.to !== '/portal/datos').map((i) => (
-          <NavLink key={i.to} to={i.to} end={i.to === '/portal'} className={({ isActive }) => cx('flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium', isActive ? 'text-brand-700' : 'text-slate-500')}>
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom,0px)] md:hidden">
+        {items.filter((i) => ['/portal', '/portal/citas', '/portal/recetas', '/portal/mensajes', '/portal/datos'].includes(i.to)).map((i) => (
+          <NavLink key={i.to} to={i.to} end={i.to === '/portal'} className={({ isActive }) => cx('relative flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium', isActive ? 'text-brand-700' : 'text-slate-500')}>
             <i.icon className="h-5 w-5" />
-            {i.label.split(' ')[0]}
+            {i.to === '/portal/mensajes' && unread > 0 && <span className="absolute right-1/4 top-1 h-2 w-2 rounded-full bg-brand-600" />}
+            {i.label}
           </NavLink>
         ))}
       </nav>

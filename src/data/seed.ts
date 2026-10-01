@@ -6,6 +6,8 @@ import type {
   Center,
   Consent,
   ConsentTemplate,
+  Conversation,
+  Prescription,
   DocumentItem,
   Episode,
   Patient,
@@ -36,6 +38,8 @@ export interface DB {
   tasks: Task[]
   audit: AuditEntry[]
   users: StaffUser[]
+  prescriptions: Prescription[]
+  conversations: Conversation[]
 }
 
 // Generador pseudoaleatorio determinista para que la demo sea siempre igual.
@@ -138,7 +142,7 @@ export function buildSeed(): DB {
       medications: [],
       antecedents: [],
       relations: [],
-      createdAt: iso(addDays(today, -400 + i * 17)),
+      createdAt: iso(addDays(today, -110 + i * 6)),
     }
   })
 
@@ -368,5 +372,33 @@ export function buildSeed(): DB {
     { id: 'au5', at: iso(atTime(addDays(today, -2), 9, 15)), user: 'Elvira Sanz', role: 'privacidad', action: 'Acceso', entity: 'Auditoría', detail: 'Consulta del registro de accesos del centro Chamberí' },
   ]
 
-  return { centers, professionals, rooms, services, patients, appointments, episodes, treatments, documents, consentTemplates, consents, budgets, payments, tasks, audit, users }
+  // ---- Recetas ----
+  const rx = (n: number) => `RX-${String(482100 + n * 137)}`
+  const prescriptions: Prescription[] = [
+    { id: 'rx1', patientId: 'pa1', professionalId: 'p4', medication: 'Ibuprofeno 600 mg comprimidos', dose: '1 comprimido', frequency: 'Cada 8 horas, con comida', duration: '7 días', instructions: 'Tomar solo si hay dolor. No superar 3 comprimidos al día.', date: iso(addDays(today, -2)), validUntil: iso(addDays(today, 28)), code: rx(1), status: 'activa' },
+    { id: 'rx2', patientId: 'pa1', professionalId: 'p4', medication: 'Enalapril 10 mg comprimidos', dose: '1 comprimido', frequency: 'Cada 24 horas, por la mañana', duration: 'Tratamiento crónico (3 meses)', instructions: 'Control de tensión en la próxima revisión.', date: iso(addDays(today, -20)), validUntil: iso(addDays(today, 70)), code: rx(2), status: 'activa' },
+    { id: 'rx3', patientId: 'pa1', professionalId: 'p4', medication: 'Paracetamol 1 g comprimidos', dose: '1 comprimido', frequency: 'Cada 8 horas si dolor', duration: '5 días', instructions: '', date: iso(addDays(today, -90)), validUntil: iso(addDays(today, -60)), code: rx(3), status: 'dispensada' },
+    { id: 'rx4', patientId: 'pa3', professionalId: 'p3', medication: 'Amoxicilina 500 mg cápsulas', dose: '1 cápsula', frequency: 'Cada 8 horas', duration: '7 días', instructions: 'Completar el tratamiento aunque desaparezcan las molestias.', date: iso(addDays(today, -10)), validUntil: iso(addDays(today, 20)), code: rx(4), status: 'activa' },
+  ]
+
+  // ---- Mensajes paciente ↔ administración ----
+  const msg = (from: 'paciente' | 'clinica', author: string, text: string, at: Date) => ({ id: `m${Math.floor(rand() * 1e9)}`, from, author, text, at: iso(at) })
+  const conversations: Conversation[] = [
+    { id: 'cv1', patientId: 'pa1', subject: 'Factura de las sesiones de fisioterapia', category: 'Facturas y pagos', status: 'abierta', unreadClinic: false, unreadPatient: true, createdAt: iso(atTime(addDays(today, -1), 9, 12)),
+      messages: [
+        msg('paciente', 'María García López', 'Hola, ¿me podéis enviar la factura de las sesiones de fisioterapia para presentarla en Sanitas? Gracias.', atTime(addDays(today, -1), 9, 12)),
+        msg('clinica', 'Pedro Gómez · Administración', 'Hola María. Te la preparamos hoy y la tendrás en «Documentos» del portal. ¿La necesitas a nombre de otra persona?', atTime(addDays(today, -1), 10, 3)),
+      ] },
+    { id: 'cv2', patientId: 'pa2', subject: '¿Puedo ir acompañada a la consulta?', category: 'Citas', status: 'abierta', unreadClinic: true, unreadPatient: false, createdAt: iso(atTime(today, 8, 40)),
+      messages: [msg('paciente', 'Lucía Martín Sanz', 'Buenos días, el jueves tengo cita y me gustaría ir con mi madre. ¿Hay algún problema?', atTime(today, 8, 40))] },
+    { id: 'cv3', patientId: 'pa6', subject: 'Cambio de dirección postal', category: 'Datos personales', status: 'abierta', unreadClinic: true, unreadPatient: false, createdAt: iso(atTime(addDays(today, -1), 19, 5)),
+      messages: [msg('paciente', 'Carlos Serrano Vega', 'Me he mudado. La nueva dirección es C/ Ríos Rosas 22, 3ºB, 28003 Madrid.', atTime(addDays(today, -1), 19, 5))] },
+    { id: 'cv4', patientId: 'pa5', subject: 'Justificante de asistencia', category: 'Documentación', status: 'cerrada', unreadClinic: false, unreadPatient: false, createdAt: iso(atTime(addDays(today, -6), 12, 0)),
+      messages: [
+        msg('paciente', 'Elena Navarro Pérez', '¿Me podéis dar un justificante para el trabajo de la consulta del martes?', atTime(addDays(today, -6), 12, 0)),
+        msg('clinica', 'Silvia Ramos · Recepción', 'Claro, ya lo tienes publicado en tus documentos. ¡Un saludo!', atTime(addDays(today, -6), 12, 25)),
+      ] },
+  ]
+
+  return { centers, professionals, rooms, services, patients, appointments, episodes, treatments, documents, consentTemplates, consents, budgets, payments, tasks, audit, users, prescriptions, conversations }
 }

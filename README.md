@@ -25,21 +25,23 @@ Al hacer push a `main`, el workflow `.github/workflows/deploy.yml` publica la de
 | Pacientes | Búsqueda (también global con `Ctrl K`), alta con **detección de duplicados**, exportación CSV auditada. |
 | Ficha 360º | Cabecera con alertas (alergias, datos declarados pendientes, consentimientos, tutor legal), resumen, expediente clínico (alergias, medicación, antecedentes, episodios), citas, tratamientos, documentos, consentimientos, económico y **línea temporal** filtrable. |
 | Episodios | Registro de visita con notas internas, juicio clínico, plan, resumen publicable y próxima acción (genera tarea). |
+| Sesión grabada | Al pulsar «Iniciar atención» el profesional graba la consulta (modo demostración o micrófono real en Chrome/Edge), se transcribe y al finalizar se propone la nota clínica para revisar y guardar en el historial. |
+| Recetas | El profesional emite recetas desde la ficha; el paciente las ve en su portal con código para la farmacia. |
 | Documentos | Repositorio con revisión y **publicación controlada** al portal; cada visualización queda auditada. |
 | Consentimientos | Plantillas versionadas, envío, aceptación trazable con evidencias, vigencia, caducidad y revocación. |
 | Tratamientos | Planes con sesiones, progreso, revisión y alertas de seguimiento. |
 | Presupuestos y pagos | Presupuestos con líneas, descuentos e IVA, aceptación, cobros parciales y pendientes. |
-| Informes | Indicadores operativos y económicos, actividad diaria, ocupación e ingresos. |
+| Informes | Pestaña **Analíticas** (indicadores, actividad diaria, ocupación e ingresos) y pestaña **Historial** (evolución mensual y últimas visitas). |
 | Configuración | Centros, profesionales, salas/recursos y servicios (CRUD). |
 | Usuarios y permisos | Usuarios y matriz de acceso por rol (Anexo A). |
 | Auditoría | Registro de accesos, cambios, publicaciones y exportaciones. |
 
-**Portal del paciente** (responsive, sin instalar nada): próxima cita con confirmar / cambiar / cancelar, pedir cita en huecos realmente libres, documentos publicados, firma de consentimientos con verificación OTP simulada, tratamientos y evolución, presupuestos (aceptar y pago online simulado), datos personales, preferencias de comunicación, declaración de alergias o medicación para revisión y solicitud de derechos RGPD.
+**Portal del paciente** (responsive, sin instalar nada): recetas activas con pantalla «Mostrar en la farmacia», chat y solicitudes a administración, próxima cita con confirmar / cambiar / cancelar, pedir cita en huecos realmente libres, documentos publicados, firma de consentimientos con verificación OTP simulada, tratamientos y evolución, presupuestos (aceptar y pago online simulado), datos personales, preferencias de comunicación, declaración de alergias o medicación para revisión y solicitud de derechos RGPD.
 
 ## Guion sugerido para la demo
 
 1. **Recepción (Silvia Ramos)**: Inicio → alertas → *Nuevo paciente* escribiendo «María García López» para ver la detección de duplicados → *Nueva cita* en un hueco ocupado para ver el control de solapes.
-2. **Profesional (Laura Méndez)**: ficha de *María García López* → Expediente (alergias, validar el Omeprazol declarado) → *Registrar episodio* con próxima acción y resumen publicado → Línea temporal.
+2. **Profesional (Laura Méndez)**: en la Agenda abre una cita de hoy y pulsa «Iniciar atención · grabar y resumir» → modo Demostración → «Finalizar y resumir» → «Validar y guardar». Después, ficha de *María García López* → Expediente (alergias, validar el Omeprazol declarado) → *Registrar episodio* con próxima acción y resumen publicado → Línea temporal.
 3. **Paciente (María García López)** en el portal: confirmar cita, firmar el consentimiento de imagen, aceptar y pagar el presupuesto, declarar una alergia.
 4. **Administración (Irene Campos)**: Tareas (aparecen las generadas desde el portal), Informes, Usuarios y permisos, Auditoría.
 5. Entrar como **Facturación** o **Privacidad** para ver cómo cambian menú y accesos (y el registro de accesos denegados).

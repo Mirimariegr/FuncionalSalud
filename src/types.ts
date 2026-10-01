@@ -148,6 +148,11 @@ export interface Episode {
   nextAction: string
   nextActionDate?: string
   closed: boolean
+  /** Transcripción de la sesión grabada (si la hubo) */
+  transcript?: string
+  /** Resumen generado automáticamente y revisado por el profesional */
+  aiSummary?: boolean
+  durationSec?: number
 }
 
 export interface Treatment {
@@ -285,4 +290,41 @@ export interface StaffUser {
 export interface Session {
   kind: 'staff' | 'patient'
   userId: ID
+}
+
+export interface Prescription {
+  id: ID
+  patientId: ID
+  professionalId: ID
+  medication: string
+  dose: string
+  frequency: string
+  duration: string
+  instructions: string
+  date: string
+  validUntil: string
+  code: string
+  status: 'activa' | 'dispensada' | 'anulada'
+}
+
+export type MessageCategory = 'Citas' | 'Facturas y pagos' | 'Documentación' | 'Datos personales' | 'Otra consulta'
+
+export interface ChatMessage {
+  id: ID
+  from: 'paciente' | 'clinica'
+  author: string
+  text: string
+  at: string
+}
+
+export interface Conversation {
+  id: ID
+  patientId: ID
+  subject: string
+  category: MessageCategory
+  status: 'abierta' | 'cerrada'
+  messages: ChatMessage[]
+  unreadClinic: boolean
+  unreadPatient: boolean
+  createdAt: string
 }

@@ -25,6 +25,9 @@ import PortalConsents from './pages/portal/PortalConsents'
 import PortalTreatments from './pages/portal/PortalTreatments'
 import PortalBilling from './pages/portal/PortalBilling'
 import PortalProfile from './pages/portal/PortalProfile'
+import PortalMessages from './pages/portal/PortalMessages'
+import PortalPrescriptions from './pages/portal/PortalPrescriptions'
+import Messages from './pages/app/Messages'
 
 function RequireSession({ kind, children }: { kind: 'staff' | 'patient'; children: ReactNode }) {
   const session = useStore((s) => s.session)
@@ -43,6 +46,7 @@ export default function App() {
           <Route path="pacientes" element={<Patients />} />
           <Route path="pacientes/:id" element={<PatientDetail />} />
           <Route path="tareas" element={<Tasks />} />
+          <Route path="mensajes" element={<Messages />} />
           <Route path="documentos" element={<Documents />} />
           <Route path="consentimientos" element={<Consents />} />
           <Route path="tratamientos" element={<Treatments />} />
@@ -55,6 +59,8 @@ export default function App() {
         <Route path="/portal" element={<RequireSession kind="patient"><PatientLayout /></RequireSession>}>
           <Route index element={<PortalHome />} />
           <Route path="citas" element={<PortalAppointments />} />
+          <Route path="recetas" element={<PortalPrescriptions />} />
+          <Route path="mensajes" element={<PortalMessages />} />
           <Route path="documentos" element={<PortalDocuments />} />
           <Route path="consentimientos" element={<PortalConsents />} />
           <Route path="tratamientos" element={<PortalTreatments />} />

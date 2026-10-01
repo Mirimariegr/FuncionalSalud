@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, CalendarClock, Clock, DoorOpen, History, MapPin, Stethoscope, User } from 'lucide-react'
+import { AlertTriangle, CalendarClock, Mic, Clock, DoorOpen, History, MapPin, Stethoscope, User } from 'lucide-react'
 import { useRole, useStore } from '../store'
 import { apptStatus, apptTransitions } from '../lib/labels'
 import { canEdit } from '../lib/permissions'
 import { atTime, fDateTime, fLong, fTime, pad, toDateKey } from '../lib/utils'
 import type { Appointment, AppointmentStatus } from '../types'
 import { Avatar, Badge, Button, Field, Input, Modal, Select } from './ui'
+import { SessionRecorder } from './SessionRecorder'
 
 export function NewAppointmentModal({
   open,
@@ -205,9 +206,11 @@ export function AppointmentDetailModal({ appt, onClose }: { appt: Appointment | 
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [errors, setErrors] = useState<string[]>([])
+  const [session, setSession] = useState(false)
 
   useEffect(() => {
     if (appt) {
+      setSession(false)
       setMode('view')
       setErrors([])
       const d = new Date(appt.start)
@@ -218,7 +221,9 @@ export function AppointmentDetailModal({ appt, onClose }: { appt: Appointment | 
   }, [appt])
 
   if (!appt || !current) return null
+  if (session) return <SessionRecorder appt={current} onClose={() => { setSession(false); onClose() }} />
   const a = current
+  const clinician = canEdit(role, 'clinico')
   const p = patients.find((x) => x.id === a.patientId)!
   const svc = services.find((x) => x.id === a.serviceId)!
   const prof = professionals.find((x) => x.id === a.professionalId)!
@@ -302,11 +307,15 @@ export function AppointmentDetailModal({ appt, onClose }: { appt: Appointment | 
                 key={s}
                 size="sm"
                 variant={s === 'cancelada' || s === 'no_presentada' ? 'danger' : s === 'confirmada' || s === 'atendida' || s === 'en_curso' ? 'primary' : 'secondary'}
-                onClick={() => { setStatus(a.id, s); toast(`Cita: ${apptStatus[s].label}`) }}
+                icon={s === 'en_curso' && clinician ? Mic : undefined}
+                onClick={() => (s === 'en_curso' && clinician ? setSession(true) : (setStatus(a.id, s), toast(`Cita: ${apptStatus[s].label}`)))}
               >
-                {actionLabel[s] ?? apptStatus[s].label}
+                {s === 'en_curso' && clinician ? 'Iniciar atención · grabar y resumir' : actionLabel[s] ?? apptStatus[s].label}
               </Button>
             ))}
+            {a.status === 'en_curso' && clinician && (
+              <Button size="sm" icon={Mic} onClick={() => setSession(true)}>Grabar y resumir sesión</Button>
+            )}
             {['pendiente', 'confirmada', 'replanificacion', 'no_presentada'].includes(a.status) && (
               <Button size="sm" variant="secondary" icon={CalendarClock} onClick={() => setMode('reschedule')}>Replanificar</Button>
             )}

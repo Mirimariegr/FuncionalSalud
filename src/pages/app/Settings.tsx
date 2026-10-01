@@ -138,13 +138,13 @@ export default function Settings() {
               <Input list="specialties" value={prof.specialty} onChange={(e) => setProf({ ...prof, specialty: e.target.value })} />
               <datalist id="specialties">{specialties.map((s) => <option key={s} value={s} />)}</datalist>
             </Field>
-            <Field label="Centros">
+            <Field label="Centros" group>
               <div className="flex flex-wrap gap-3">{centers.map((c) => <Check key={c.id} label={c.name} checked={prof.centerIds.includes(c.id)} onChange={(v) => setProf({ ...prof, centerIds: v ? [...prof.centerIds, c.id] : prof.centerIds.filter((x) => x !== c.id) })} />)}</div>
             </Field>
-            <Field label="Servicios habilitados">
+            <Field label="Servicios habilitados" group>
               <div className="grid grid-cols-2 gap-2">{services.map((s) => <Check key={s.id} label={s.name} checked={prof.serviceIds.includes(s.id)} onChange={(v) => setProf({ ...prof, serviceIds: v ? [...prof.serviceIds, s.id] : prof.serviceIds.filter((x) => x !== s.id) })} />)}</div>
             </Field>
-            <Field label="Color en agenda">
+            <Field label="Color en agenda" group>
               <div className="flex gap-2">{colors.map((c) => <button key={c} type="button" onClick={() => setProf({ ...prof, color: c })} className="h-7 w-7 rounded-full ring-offset-2" style={{ background: c, boxShadow: prof.color === c ? `0 0 0 2px white, 0 0 0 4px ${c}` : undefined }} />)}</div>
             </Field>
             <Toggle checked={prof.active} onChange={(v) => setProf({ ...prof, active: v })} label="Activo" />

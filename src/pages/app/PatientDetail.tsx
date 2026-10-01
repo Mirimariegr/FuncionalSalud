@@ -19,6 +19,8 @@ import {
   Mail,
   MapPin,
   MessageCircle,
+  Mic,
+  Pencil,
   Phone,
   Pill,
   Plus,
@@ -30,11 +32,14 @@ import {
 import { budgetTotal, effectiveConsentStatus, paidForBudget, useCurrentStaff, useStore } from '../../store'
 import { apptStatus, budgetStatus, consentStatus, patientStatus, treatmentStatus } from '../../lib/labels'
 import { can, canEdit } from '../../lib/permissions'
-import { age, cx, fDate, fDateTime, fMoney, fTime, todayKey } from '../../lib/utils'
+import { age, cx, fDate, fDateTime, fMoney, fTime, sameDay, todayKey } from '../../lib/utils'
 import { Avatar, Badge, Button, Card, Empty, Field, Input, Modal, Progress, Select, Tabs } from '../../components/ui'
 import { AppointmentDetailModal, NewAppointmentModal } from '../../components/AppointmentDialogs'
 import { ConsentDetailModal, DocumentViewer, EpisodeModal, SendConsentModal, TreatmentModal, UploadDocumentModal } from '../../components/ClinicalDialogs'
 import { BudgetModal, PaymentModal } from '../../components/BillingDialogs'
+import { isActive, NewPrescriptionModal, PrescriptionCard } from '../../components/Prescriptions'
+import { SessionRecorder } from '../../components/SessionRecorder'
+import type { Patient } from '../../types'
 import type { Allergy, Appointment, Consent, DocumentItem, Medication, PatientStatus, Treatment } from '../../types'
 
 type Tab = 'resumen' | 'expediente' | 'citas' | 'tratamientos' | 'documentos' | 'consentimientos' | 'economico' | 'timeline'
@@ -44,7 +49,8 @@ export default function PatientDetail() {
   const user = useCurrentStaff()!
   const role = user.role
   const db = useStore()
-  const { patients, appointments, episodes, treatments, documents, consents, consentTemplates, budgets, payments, professionals, services, centers } = db
+  const { patients, appointments, episodes, treatments, documents, consents, consentTemplates, budgets, payments, professionals, services, centers, prescriptions } = db
+  const setRxStatus = useStore((s) => s.setPrescriptionStatus)
   const updatePatient = useStore((s) => s.updatePatient)
   const validate = useStore((s) => s.validateClinicalItem)
   const setPublished = useStore((s) => s.setDocumentPublished)
@@ -53,7 +59,8 @@ export default function PatientDetail() {
   const toast = useStore((s) => s.toast)
 
   const [tab, setTab] = useState<Tab>('resumen')
-  const [modal, setModal] = useState<null | 'appt' | 'episode' | 'doc' | 'consent' | 'budget' | 'payment' | 'treatment' | 'allergy' | 'med'>(null)
+  const [modal, setModal] = useState<null | 'appt' | 'episode' | 'doc' | 'consent' | 'budget' | 'payment' | 'treatment' | 'allergy' | 'med' | 'rx' | 'contact'>(null)
+  const [sessionAppt, setSessionAppt] = useState<Appointment | null>(null)
   const [apptDetail, setApptDetail] = useState<Appointment | null>(null)
   const [docView, setDocView] = useState<DocumentItem | null>(null)
   const [consentView, setConsentView] = useState<Consent | null>(null)
@@ -77,6 +84,8 @@ export default function PatientDetail() {
   const pConsents = consents.filter((c) => c.patientId === p.id).sort((a, b) => b.sentAt.localeCompare(a.sentAt))
   const pBudgets = budgets.filter((b) => b.patientId === p.id)
   const pPayments = payments.filter((x) => x.patientId === p.id).sort((a, b) => b.date.localeCompare(a.date))
+  const pRx = prescriptions.filter((x) => x.patientId === p.id).sort((a, b) => Number(isActive(b)) - Number(isActive(a)) || b.date.localeCompare(a.date))
+  const todayAppt = pAppts.find((a) => sameDay(a.start, new Date()) && ['confirmada', 'pendiente', 'en_curso'].includes(a.status) && (!user.professionalId || a.professionalId === user.professionalId))
   const activeAllergies = p.allergies.filter((a) => a.status === 'activa')
   const pendingDeclared = [...p.allergies.filter((a) => a.status === 'pendiente'), ...p.medications.filter((m) => m.status === 'pendiente')]
   const pendingConsents = pConsents.filter((c) => c.status === 'pendiente' || effectiveConsentStatus(c) === 'caducado')
@@ -121,7 +130,8 @@ export default function PatientDetail() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2 pt-3">
-              {canEdit(role, 'agenda') && <Button size="sm" icon={CalendarPlus} onClick={() => setModal('appt')}>Nueva cita</Button>}
+              {canEdit(role, 'clinico') && todayAppt && <Button size="sm" icon={Mic} onClick={() => setSessionAppt(todayAppt)}>Iniciar sesión · grabar</Button>}
+              {canEdit(role, 'agenda') && <Button size="sm" variant={canEdit(role, 'clinico') && todayAppt ? 'secondary' : 'primary'} icon={CalendarPlus} onClick={() => setModal('appt')}>Nueva cita</Button>}
               {canEdit(role, 'clinico') && <Button size="sm" variant="secondary" icon={ClipboardPlus} onClick={() => setModal('episode')}>Registrar episodio</Button>}
               {canEdit(role, 'documentos') && <Button size="sm" variant="secondary" icon={FilePlus2} onClick={() => setModal('doc')}>Documento</Button>}
               {canEdit(role, 'consentimientos') && <Button size="sm" variant="secondary" icon={FileSignature} onClick={() => setModal('consent')}>Consentimiento</Button>}
@@ -190,8 +200,10 @@ export default function PatientDetail() {
               </ul>
             )}
           </Card>
-          <Card title="Contacto y preferencias" icon={MessageCircle}>
+          <Card title="Contacto y preferencias" icon={MessageCircle} action={canEdit(role, 'pacientes') && <Button size="sm" variant="soft" icon={Pencil} onClick={() => setModal('contact')}>Editar</Button>}>
             <dl className="space-y-2.5 text-sm">
+              <Row l="Teléfono" v={p.phone} />
+              <Row l="Email" v={<span className="break-all">{p.email || '—'}</span>} />
               <Row l="Canal preferido" v={<span className="capitalize">{p.preferredChannel}</span>} />
               <Row l="Idioma" v={p.language} />
               <Row l="Dirección" v={p.address} />
@@ -294,20 +306,43 @@ export default function PatientDetail() {
                   </ul>
                 )}
               </Card>
-              <Card title="Episodios y visitas" icon={Stethoscope} padded={false} action={canEdit(role, 'clinico') && <Button size="sm" variant="soft" icon={Plus} onClick={() => setModal('episode')}>Nuevo</Button>}>
+              <Card title="Recetas" icon={Pill} action={canEdit(role, 'clinico') && <Button size="sm" variant="soft" icon={Plus} onClick={() => setModal('rx')}>Nueva receta</Button>}>
+                {pRx.length === 0 ? <p className="text-sm text-slate-500">Sin recetas.</p> : (
+                  <div className="space-y-2">
+                    {pRx.map((rx) => (
+                      <div key={rx.id}>
+                        <PrescriptionCard rx={rx} compact />
+                        {canEdit(role, 'clinico') && isActive(rx) && (
+                          <div className="mt-1 flex justify-end gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => { setRxStatus(rx.id, 'dispensada'); toast('Marcada como dispensada') }}>Dispensada</Button>
+                            <Button size="sm" variant="ghost" onClick={() => { setRxStatus(rx.id, 'anulada'); toast('Receta anulada') }}>Anular</Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+              <Card title="Episodios y visitas" icon={Stethoscope} padded={false} className="lg:col-span-2" action={canEdit(role, 'clinico') && <Button size="sm" variant="soft" icon={Plus} onClick={() => setModal('episode')}>Nuevo manual</Button>}>
                 {pEpisodes.length === 0 ? <Empty icon={Stethoscope} title="Sin episodios" /> : (
                   <ul className="divide-y divide-slate-100">
                     {pEpisodes.map((e) => (
                       <li key={e.id} className="px-5 py-4">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-semibold">{e.reason}</p>
-                          <span className="text-xs text-slate-400">{fDate(e.date)}</span>
+                          <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">{e.reason}{e.aiSummary && <Badge tone="violet"><Mic className="h-3 w-3" /> Grabada · resumen revisado</Badge>}</p>
+                          <span className="shrink-0 text-xs text-slate-400">{fDate(e.date)}{e.durationSec ? ` · ${Math.max(1, Math.round(e.durationSec / 60))} min` : ''}</span>
                         </div>
                         <p className="text-xs text-slate-500">{prname(e.professionalId)}{e.treatmentId && ` · ${treatments.find((t) => t.id === e.treatmentId)?.name}`}</p>
                         {e.observations && <p className="mt-2 text-sm text-slate-600"><span className="text-xs font-medium text-slate-400">Observaciones · </span>{e.observations}</p>}
                         {e.diagnosis && <p className="mt-1 text-sm text-slate-600"><span className="text-xs font-medium text-slate-400">Juicio clínico · </span>{e.diagnosis}</p>}
                         {e.plan && <p className="mt-1 text-sm text-slate-600"><span className="text-xs font-medium text-slate-400">Plan · </span>{e.plan}</p>}
                         {e.nextAction && <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-brand-50 px-2 py-1 text-xs text-brand-700"><CheckCircle2 className="h-3.5 w-3.5" /> Próxima acción: {e.nextAction} · {fDate(e.nextActionDate)}</p>}
+                        {e.transcript && (
+                          <details className="mt-2 text-xs">
+                            <summary className="cursor-pointer font-medium text-brand-700">Ver transcripción</summary>
+                            <p className="mt-1 whitespace-pre-line rounded-lg bg-slate-50 p-3 text-slate-600">{e.transcript}</p>
+                          </details>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -474,6 +509,9 @@ export default function PatientDetail() {
       <TreatmentModal open={modal === 'treatment'} onClose={() => setModal(null)} patientId={p.id} treatment={editTreatment} />
       <AllergyModal open={modal === 'allergy'} onClose={() => setModal(null)} patientId={p.id} />
       <MedicationModal open={modal === 'med'} onClose={() => setModal(null)} patientId={p.id} />
+      <NewPrescriptionModal open={modal === 'rx'} onClose={() => setModal(null)} patientId={p.id} />
+      <ContactModal open={modal === 'contact'} onClose={() => setModal(null)} patient={p} />
+      {sessionAppt && <SessionRecorder appt={sessionAppt} onClose={() => { setSessionAppt(null); setTab('expediente') }} />}
       <AppointmentDetailModal appt={apptDetail} onClose={() => setApptDetail(null)} />
       <DocumentViewer doc={docView} onClose={() => setDocView(null)} readOnly={!canEdit(role, 'documentos')} />
       <ConsentDetailModal consent={consentView} onClose={() => setConsentView(null)} />
@@ -609,6 +647,36 @@ function MedicationModal({ open, onClose, patientId }: { open: boolean; onClose:
           <Field label="Frecuencia"><Input value={f.frequency} onChange={(e) => setF({ ...f, frequency: e.target.value })} /></Field>
         </div>
         <Field label="Inicio"><Input type="date" value={f.start} onChange={(e) => setF({ ...f, start: e.target.value })} /></Field>
+      </div>
+    </Modal>
+  )
+}
+
+function ContactModal({ open, onClose, patient }: { open: boolean; onClose: () => void; patient: Patient }) {
+  const updatePatient = useStore((s) => s.updatePatient)
+  const toast = useStore((s) => s.toast)
+  const init = () => ({ phone: patient.phone, email: patient.email, address: patient.address, preferredChannel: patient.preferredChannel, language: patient.language })
+  const [f, setF] = useState(init)
+  const [prev, setPrev] = useState(open)
+  if (open !== prev) { setPrev(open); if (open) setF(init()) }
+  return (
+    <Modal open={open} onClose={onClose} title="Editar datos de contacto" subtitle="Los cambios quedan registrados en auditoría." size="md"
+      footer={<><Button variant="secondary" onClick={onClose}>Cancelar</Button><Button disabled={!f.phone.trim()} onClick={() => {
+        const changed = (['phone', 'email', 'address', 'preferredChannel', 'language'] as const).filter((k) => f[k] !== patient[k])
+        updatePatient(patient.id, f, `Datos de contacto modificados (${changed.join(', ') || 'sin cambios'}) · ${patient.firstName} ${patient.lastName}`)
+        toast('Datos de contacto actualizados')
+        onClose()
+      }}>Guardar</Button></>}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Teléfono móvil"><Input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></Field>
+        <Field label="Email"><Input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>
+        <Field label="Dirección" className="sm:col-span-2"><Input value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} /></Field>
+        <Field label="Canal preferido">
+          <Select value={f.preferredChannel} onChange={(e) => setF({ ...f, preferredChannel: e.target.value as Patient['preferredChannel'] })}>
+            <option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="sms">SMS</option><option value="telefono">Teléfono</option>
+          </Select>
+        </Field>
+        <Field label="Idioma"><Select value={f.language} onChange={(e) => setF({ ...f, language: e.target.value })}><option>Español</option><option>Inglés</option><option>Catalán</option><option>Francés</option></Select></Field>
       </div>
     </Modal>
   )

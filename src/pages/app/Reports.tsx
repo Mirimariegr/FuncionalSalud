@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import { BarChart3, CalendarCheck2, CalendarX2, Download, Euro, Users, UserX } from 'lucide-react'
+import { BarChart3, CalendarCheck2, CalendarX2, Download, Euro, History, Mic, Users, UserX } from 'lucide-react'
 import { budgetTotal, useStore } from '../../store'
-import { addDays, fDateShort, fMoney, sameDay } from '../../lib/utils'
-import { Button, Card, PageHeader, Select, Stat } from '../../components/ui'
+import { addDays, fDate, fDateShort, fMoney, sameDay } from '../../lib/utils'
+import { Link } from 'react-router-dom'
+import { Badge, Button, Card, PageHeader, Select, Stat, Tabs, Td, Th } from '../../components/ui'
 
 function HBars({ data, format = (n: number) => String(n), color = '#0d9488' }: { data: { label: string; value: number; color?: string }[]; format?: (n: number) => string; color?: string }) {
   const max = Math.max(1, ...data.map((d) => d.value))
@@ -26,6 +27,7 @@ export default function Reports() {
   const toast = useStore((s) => s.toast)
   const [days, setDays] = useState(30)
   const [center, setCenter] = useState('all')
+  const [tab, setTab] = useState<'analiticas' | 'historial'>('analiticas')
 
   const from = addDays(new Date(), -days).toISOString()
   const nowIso = new Date().toISOString()
@@ -77,7 +79,7 @@ export default function Reports() {
       <PageHeader
         title="Informes y cuadro de mando"
         subtitle="Indicadores operativos y económicos básicos del MVP."
-        actions={
+        actions={tab === 'analiticas' && (
           <>
             <Select value={center} onChange={(e) => setCenter(e.target.value)} className="w-auto">
               <option value="all">Todos los centros</option>
@@ -88,8 +90,12 @@ export default function Reports() {
             </Select>
             <Button variant="secondary" icon={Download} onClick={exportCsv}>Exportar CSV</Button>
           </>
-        }
+        )}
       />
+      <div className="mb-6">
+        <Tabs tabs={[{ id: 'analiticas', label: 'Analíticas', icon: BarChart3 }, { id: 'historial', label: 'Historial', icon: History }]} value={tab} onChange={setTab} />
+      </div>
+      {tab === 'historial' ? <HistoryTab /> : <>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <Stat label="Pacientes activos" value={patients.filter((p) => p.status === 'activo' || p.status === 'seguimiento').length} icon={Users} />
         <Stat label="Citas atendidas" value={done} hint={`de ${appts.length} en el periodo`} icon={CalendarCheck2} tone="green" />
@@ -141,6 +147,76 @@ export default function Reports() {
           </dl>
         </Card>
       </div>
+      </>}
+    </div>
+  )
+}
+
+/** Historial: evolución mensual de la actividad y registro de las últimas visitas. */
+function HistoryTab() {
+  const { appointments, payments, patients, episodes, professionals } = useStore()
+  const months = Array.from({ length: 4 }, (_, i) => {
+    const d = new Date()
+    d.setDate(1)
+    d.setMonth(d.getMonth() - i)
+    return d
+  })
+  const inMonth = (iso: string, d: Date) => {
+    const x = new Date(iso)
+    return x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth()
+  }
+  const rows = months.map((m) => {
+    const ap = appointments.filter((a) => inMonth(a.start, m) && a.start <= new Date().toISOString())
+    return {
+      label: (() => { const t = m.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1) })(),
+      done: ap.filter((a) => a.status === 'atendida').length,
+      noShow: ap.filter((a) => a.status === 'no_presentada').length,
+      cancelled: ap.filter((a) => a.status === 'cancelada').length,
+      newPatients: patients.filter((p) => inMonth(p.createdAt, m)).length,
+      recorded: episodes.filter((e) => e.aiSummary && inMonth(e.date, m)).length,
+      income: payments.filter((p) => inMonth(p.date, m)).reduce((a, p) => a + p.amount, 0),
+    }
+  })
+  const recent = [...episodes].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12)
+  const pname = (id: string) => { const p = patients.find((x) => x.id === id); return p ? `${p.firstName} ${p.lastName}` : '' }
+  return (
+    <div className="space-y-6">
+      <Card title="Evolución mensual" icon={History} padded={false}>
+        <div className="scroll-thin overflow-x-auto">
+          <table className="w-full tabular-nums">
+            <thead className="border-b border-slate-100 bg-slate-50/60">
+              <tr><Th>Mes</Th><Th className="text-right">Atendidas</Th><Th className="text-right">No-shows</Th><Th className="text-right">Canceladas</Th><Th className="text-right">Pacientes nuevos</Th><Th className="text-right">Sesiones grabadas</Th><Th className="text-right">Ingresos</Th></tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {rows.map((r) => (
+                <tr key={r.label}>
+                  <Td className="font-medium">{r.label}</Td>
+                  <Td className="text-right">{r.done}</Td>
+                  <Td className="text-right">{r.noShow}</Td>
+                  <Td className="text-right">{r.cancelled}</Td>
+                  <Td className="text-right">{r.newPatients}</Td>
+                  <Td className="text-right">{r.recorded}</Td>
+                  <Td className="text-right font-semibold">{fMoney(r.income)}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="border-t border-slate-100 px-5 py-2 text-[11px] text-slate-400">Los datos de demostración empiezan hace un mes; los meses anteriores aparecen vacíos.</p>
+      </Card>
+      <Card title="Últimas visitas registradas" icon={CalendarCheck2} padded={false}>
+        <ul className="divide-y divide-slate-100">
+          {recent.map((e) => (
+            <li key={e.id} className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
+              <span className="w-24 shrink-0 text-xs text-slate-500">{fDate(e.date)}</span>
+              <Link to={`/app/pacientes/${e.patientId}`} className="font-medium hover:text-brand-700">{pname(e.patientId)}</Link>
+              <span className="min-w-0 flex-1 truncate text-slate-600">{e.reason}</span>
+              <span className="text-xs text-slate-500">{professionals.find((p) => p.id === e.professionalId)?.name}</span>
+              {e.aiSummary && <Badge tone="violet"><Mic className="h-3 w-3" /> Grabada</Badge>}
+            </li>
+          ))}
+        </ul>
+      </Card>
     </div>
   )
 }

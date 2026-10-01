@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageCircle,
   RotateCcw,
   Settings,
   Shield,
@@ -32,6 +33,7 @@ const nav: { to: string; label: string; icon: LucideIcon; module: Module; group:
   { to: '/app/agenda', label: 'Agenda', icon: CalendarDays, module: 'agenda', group: 'Operativa' },
   { to: '/app/pacientes', label: 'Pacientes', icon: Users, module: 'pacientes', group: 'Operativa' },
   { to: '/app/tareas', label: 'Tareas y alertas', icon: ClipboardCheck, module: 'tareas', group: 'Operativa' },
+  { to: '/app/mensajes', label: 'Mensajes', icon: MessageCircle, module: 'mensajes', group: 'Operativa' },
   { to: '/app/documentos', label: 'Documentos', icon: FileText, module: 'documentos', group: 'Clínica' },
   { to: '/app/consentimientos', label: 'Consentimientos', icon: FileSignature, module: 'consentimientos', group: 'Clínica' },
   { to: '/app/tratamientos', label: 'Tratamientos', icon: Stethoscope, module: 'tratamientos', group: 'Clínica' },
@@ -55,6 +57,7 @@ export default function StaffLayout() {
   const resetDemo = useStore((s) => s.resetDemo)
   const toast = useStore((s) => s.toast)
   const tasks = useStore((s) => s.tasks)
+  const unreadMsgs = useStore((s) => s.conversations.filter((c) => c.unreadClinic).length)
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
@@ -102,6 +105,7 @@ export default function StaffLayout() {
                     <n.icon className="h-4 w-4" />
                     <span className="flex-1">{n.label}</span>
                     {n.module === 'tareas' && pending > 0 && <span className="rounded-full bg-red-500 px-1.5 text-[10px] font-semibold text-white">{pending}</span>}
+                    {n.module === 'mensajes' && unreadMsgs > 0 && <span className="rounded-full bg-brand-600 px-1.5 text-[10px] font-semibold text-white">{unreadMsgs}</span>}
                   </NavLink>
                 ))}
               </div>

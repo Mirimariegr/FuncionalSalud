@@ -8,11 +8,13 @@ import type {
   AuditEntry,
   Budget,
   Consent,
+  Conversation,
   DocumentItem,
   Episode,
   Medication,
   Patient,
   Payment,
+  Prescription,
   Role,
   Session,
   Task,
@@ -74,9 +76,19 @@ interface State extends DB {
 
   addTask: (t: Omit<Task, 'id' | 'createdAt' | 'done'>) => void
   toggleTask: (id: string) => void
+
+  addPrescription: (p: Omit<Prescription, 'id' | 'code' | 'status' | 'date'>) => Prescription
+  setPrescriptionStatus: (id: string, status: Prescription['status']) => void
+
+  createConversation: (c: Pick<Conversation, 'patientId' | 'subject' | 'category'>, text: string) => Conversation
+  sendMessage: (conversationId: string, text: string) => void
+  markConversationRead: (conversationId: string, side: 'clinic' | 'patient') => void
+  setConversationStatus: (conversationId: string, status: Conversation['status']) => void
 }
 
-const STORAGE_KEY = 'funcional-salud-demo-v1'
+const roleShort = (r: AuditEntry['role']) => (r === 'recepcion' ? 'Recepción' : r === 'facturacion' ? 'Administración' : r === 'sanitario' ? 'Profesional' : r === 'paciente' ? 'Paciente' : 'Clínica')
+
+const STORAGE_KEY = 'funcional-salud-demo-v2'
 
 export const useStore = create<State>()(
   persist(
@@ -368,6 +380,56 @@ export const useStore = create<State>()(
         // ---------- Tareas ----------
         addTask: (t) => set((s) => ({ tasks: [...s.tasks, { ...t, id: uid('tk'), createdAt: new Date().toISOString(), done: false }] })),
         toggleTask: (id) => set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, done: !t.done } : t)) })),
+
+        // ---------- Recetas ----------
+        addPrescription: (data) => {
+          const rx: Prescription = { ...data, id: uid('rx'), code: `RX-${Math.floor(100000 + Math.random() * 899999)}`, status: 'activa', date: new Date().toISOString() }
+          set((s) => ({ prescriptions: [...s.prescriptions, rx] }))
+          get().log('Prescripción', 'Receta', `${rx.medication} · ${pname(rx.patientId)}`)
+          return rx
+        },
+        setPrescriptionStatus: (id, status) => {
+          const rx = get().prescriptions.find((x) => x.id === id)
+          if (!rx) return
+          set((s) => ({ prescriptions: s.prescriptions.map((x) => (x.id === id ? { ...x, status } : x)) }))
+          get().log(status === 'anulada' ? 'Anulación' : 'Dispensación', 'Receta', `${rx.medication} · ${pname(rx.patientId)}`)
+        },
+
+        // ---------- Mensajes ----------
+        createConversation: (c, text) => {
+          const a = actor()
+          const fromPatient = a.role === 'paciente'
+          const now = new Date().toISOString()
+          const conv: Conversation = {
+            ...c,
+            id: uid('cv'),
+            status: 'abierta',
+            createdAt: now,
+            unreadClinic: fromPatient,
+            unreadPatient: !fromPatient,
+            messages: [{ id: uid('m'), from: fromPatient ? 'paciente' : 'clinica', author: fromPatient ? a.user : `${a.user} · ${roleShort(a.role)}`, text, at: now }],
+          }
+          set((s) => ({ conversations: [conv, ...s.conversations] }))
+          get().log('Solicitud', 'Mensaje', `«${c.subject}» (${c.category}) · ${pname(c.patientId)}`)
+          return conv
+        },
+        sendMessage: (conversationId, text) => {
+          const a = actor()
+          const fromPatient = a.role === 'paciente'
+          const m = { id: uid('m'), from: fromPatient ? ('paciente' as const) : ('clinica' as const), author: fromPatient ? a.user : `${a.user} · ${roleShort(a.role)}`, text, at: new Date().toISOString() }
+          set((s) => ({
+            conversations: s.conversations.map((c) =>
+              c.id === conversationId ? { ...c, status: 'abierta', messages: [...c.messages, m], unreadClinic: fromPatient ? true : c.unreadClinic, unreadPatient: fromPatient ? c.unreadPatient : true } : c,
+            ),
+          }))
+        },
+        markConversationRead: (conversationId, side) =>
+          set((s) => ({ conversations: s.conversations.map((c) => (c.id === conversationId ? { ...c, [side === 'clinic' ? 'unreadClinic' : 'unreadPatient']: false } : c)) })),
+        setConversationStatus: (conversationId, status) => {
+          set((s) => ({ conversations: s.conversations.map((c) => (c.id === conversationId ? { ...c, status } : c)) }))
+          const c = get().conversations.find((x) => x.id === conversationId)
+          if (c) get().log(status === 'cerrada' ? 'Cierre' : 'Reapertura', 'Mensaje', `«${c.subject}» · ${pname(c.patientId)}`)
+        },
       }
     },
     {

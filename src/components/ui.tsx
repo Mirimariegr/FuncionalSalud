@@ -112,13 +112,15 @@ export function Avatar({ name, size = 'md', color }: { name: string; size?: 'sm'
 }
 
 // ---------- Form fields ----------
-export function Field({ label, children, hint, className }: { label: string; children: ReactNode; hint?: string; className?: string }) {
+/** Campo con etiqueta. `group` para varios controles (botones, checkboxes): evita que la etiqueta reenvíe el clic al primero. */
+export function Field({ label, children, hint, className, group }: { label: string; children: ReactNode; hint?: string; className?: string; group?: boolean }) {
+  const Tag = group ? 'div' : 'label'
   return (
-    <label className={cx('block', className)}>
+    <Tag className={cx('block', className)}>
       <span className="mb-1 block text-xs font-medium text-slate-600">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-[11px] text-slate-400">{hint}</span>}
-    </label>
+    </Tag>
   )
 }
 const inputCls = 'rounded-lg border-0 bg-white px-3 py-2 text-sm text-slate-800 ring-1 ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500 outline-none transition'
