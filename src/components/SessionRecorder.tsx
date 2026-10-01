@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { Mic, Pause, Play, ShieldCheck, Sparkles, Square, Wand2 } from 'lucide-react'
 import { useStore } from '../store'
 import { summarizeTranscript, type ScriptLine } from '../data/sessionScripts'
@@ -241,15 +241,15 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
       open
       onClose={step === 'recording' ? () => undefined : close}
       size="lg"
-      title={<span className="flex items-center gap-2">{step === 'review' ? <Sparkles className="h-4 w-4 text-brand-600" /> : <Mic className="h-4 w-4 text-brand-600" />}{step === 'review' ? 'Revisa el resumen de la sesión' : 'Sesión con grabación y resumen automático'}</span>}
+      title={<span key={step === 'review' ? 'r' : 'g'} className="flex items-center gap-2">{step === 'review' ? <Sparkles className="h-4 w-4 text-brand-600" /> : <Mic className="h-4 w-4 text-brand-600" />}{step === 'review' ? 'Revisa el resumen de la sesión' : 'Sesión con grabación y resumen automático'}</span>}
       subtitle={`${p.firstName} ${p.lastName} · ${svc.name} · ${prof.name}`}
       footer={
         step === 'consent' ? (
-          <><Button variant="secondary" onClick={close}>Cancelar</Button><Button icon={Mic} disabled={!consent} onClick={start}>Empezar grabación</Button></>
+          <Fragment key="consent"><Button variant="secondary" onClick={close}>Cancelar</Button><Button icon={Mic} disabled={!consent} onClick={start}>Empezar grabación</Button></Fragment>
         ) : step === 'recording' ? (
-          <><Button variant="secondary" icon={paused ? Play : Pause} onClick={togglePause}>{paused ? 'Reanudar' : 'Pausar'}</Button><Button icon={Square} onClick={finish}>Finalizar y resumir</Button></>
+          <Fragment key="recording"><Button key={paused ? 'resume' : 'pause'} variant="secondary" icon={paused ? Play : Pause} onClick={togglePause}>{paused ? 'Reanudar' : 'Pausar'}</Button><Button icon={Square} onClick={finish}>Finalizar y resumir</Button></Fragment>
         ) : (
-          <><Button variant="secondary" onClick={close}>Descartar</Button><Button icon={ShieldCheck} disabled={!f.reason.trim()} onClick={save}>Validar y guardar en el historial</Button></>
+          <Fragment key="review"><Button variant="secondary" onClick={close}>Descartar</Button><Button icon={ShieldCheck} disabled={!f.reason.trim()} onClick={save}>Validar y guardar en el historial</Button></Fragment>
         )
       }
     >
@@ -282,8 +282,8 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
               <Mic className="relative h-5 w-5" />
             </span>
             <div className="w-16 shrink-0">
-              <p className="font-mono text-xl tabular-nums">{mmss}</p>
-              <p className="text-[11px] text-slate-400">{paused ? 'En pausa' : !listening ? 'Conectando…' : 'Grabando'}</p>
+              <p key={mmss} className="font-mono text-xl tabular-nums">{mmss}</p>
+              <p key={`${paused}-${listening}`} className="text-[11px] text-slate-400">{paused ? 'En pausa' : !listening ? 'Conectando…' : 'Grabando'}</p>
             </div>
             <div className="flex h-10 flex-1 items-center gap-[3px] overflow-hidden">
               {level.map((v, i) => <span key={i} className="w-1 shrink-0 rounded-full bg-brand-300 transition-[height] duration-100" style={{ height: `${Math.round(v * 100)}%` }} />)}
@@ -296,7 +296,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
                 <span className="text-slate-700">{l.text}</span>
               </div>
             ))}
-            {interim && <p className="text-sm italic text-slate-400">{interim}</p>}
+            {interim && <p key={interim} className="text-sm italic text-slate-400">{interim}</p>}
             <div ref={endRef} />
           </div>
           {micError && <p className="text-xs text-red-600">{micError}</p>}

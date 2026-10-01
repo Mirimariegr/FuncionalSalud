@@ -512,7 +512,7 @@ export default function PatientDetail() {
       <MedicationModal open={modal === 'med'} onClose={() => setModal(null)} patientId={p.id} />
       <NewPrescriptionModal open={modal === 'rx'} onClose={() => setModal(null)} patientId={p.id} />
       <ContactModal open={modal === 'contact'} onClose={() => setModal(null)} patient={p} />
-      {sessionAppt && <ErrorBoundary onReset={() => setSessionAppt(null)}><SessionRecorder appt={sessionAppt} onClose={() => { setSessionAppt(null); setTab('expediente') }} /></ErrorBoundary>}
+      {sessionAppt && <ErrorBoundary overlay onReset={() => setSessionAppt(null)}><SessionRecorder appt={sessionAppt} onClose={() => { setSessionAppt(null); setTab('expediente') }} /></ErrorBoundary>}
       <AppointmentDetailModal appt={apptDetail} onClose={() => setApptDetail(null)} />
       <DocumentViewer doc={docView} onClose={() => setDocView(null)} readOnly={!canEdit(role, 'documentos')} />
       <ConsentDetailModal consent={consentView} onClose={() => setConsentView(null)} />

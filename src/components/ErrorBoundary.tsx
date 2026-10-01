@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { AlertTriangle } from 'lucide-react'
 
 interface State {
@@ -6,7 +7,7 @@ interface State {
 }
 
 /** Evita la pantalla en blanco: si algo falla al pintar, muestra el error y permite recuperarse. */
-export class ErrorBoundary extends Component<{ children: ReactNode; onReset?: () => void }, State> {
+export class ErrorBoundary extends Component<{ children: ReactNode; onReset?: () => void; overlay?: boolean }, State> {
   state: State = { error: null }
 
   static getDerivedStateFromError(error: Error): State {
@@ -20,7 +21,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode; onReset?: ()
   render() {
     const { error } = this.state
     if (!error) return this.props.children
-    return (
+    const card = (
       <div className="mx-auto mt-16 max-w-lg rounded-2xl bg-white p-8 text-center ring-1 ring-slate-200">
         <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-amber-50 text-amber-600"><AlertTriangle className="h-6 w-6" /></span>
         <h2 className="mt-4 text-lg font-semibold">Algo no ha funcionado</h2>
@@ -39,5 +40,8 @@ export class ErrorBoundary extends Component<{ children: ReactNode; onReset?: ()
         </div>
       </div>
     )
+    return this.props.overlay
+      ? createPortal(<div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 p-4">{card}</div>, document.body)
+      : card
   }
 }

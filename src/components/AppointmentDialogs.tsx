@@ -222,7 +222,7 @@ export function AppointmentDetailModal({ appt, onClose }: { appt: Appointment | 
   }, [appt])
 
   if (!appt || !current) return null
-  if (session) return <ErrorBoundary onReset={() => { setSession(false); onClose() }}><SessionRecorder appt={current} onClose={() => { setSession(false); onClose() }} /></ErrorBoundary>
+  if (session) return <ErrorBoundary overlay onReset={() => { setSession(false); onClose() }}><SessionRecorder appt={current} onClose={() => { setSession(false); onClose() }} /></ErrorBoundary>
   const a = current
   const clinician = canEdit(role, 'clinico')
   const p = patients.find((x) => x.id === a.patientId)!
