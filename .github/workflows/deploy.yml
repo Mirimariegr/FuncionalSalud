@@ -1,21 +1,23 @@
 name: Deploy demo to GitHub Pages
 
-# Publica dist/ en la rama gh-pages (Settings → Pages → Deploy from a branch → gh-pages / root)
+# Publica la demo con los dos métodos de GitHub Pages, para que funcione con cualquiera de las
+# opciones de Settings → Pages → Source:
+#  - «Deploy from a branch» (gh-pages / root): job `branch`
+#  - «GitHub Actions»: job `pages` (no bloquea si esa opción no está activa)
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,13 +26,40 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - name: Push dist to gh-pages
+      - run: touch dist/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  branch:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+      - name: Push site to gh-pages
         run: |
-          cd dist
-          touch .nojekyll
+          mkdir site && tar -xf artifact.tar -C site && cd site
           git init -q -b gh-pages
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -q -m "Deploy ${GITHUB_SHA::7}"
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+
+  pages:
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
