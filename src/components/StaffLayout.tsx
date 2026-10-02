@@ -68,7 +68,9 @@ export default function StaffLayout() {
   const current = moduleByPath(location.pathname)
   const allowed = current ? can(user.role, current) : true
 
-  useEffect(() => setOpen(false), [location.pathname])
+  useEffect(() => {
+    setOpen(false)
+  }, [location.pathname])
 
   const groups = [...new Set(nav.map((n) => n.group))]
 
@@ -171,7 +173,9 @@ function Forbidden() {
   const user = useCurrentStaff()!
   const log = useStore((s) => s.log)
   const { pathname } = useLocation()
-  useEffect(() => log('Acceso denegado', 'Módulo', `Intento de acceso a ${pathname}`), [log, pathname])
+  useEffect(() => {
+    log('Acceso denegado', 'Módulo', `Intento de acceso a ${pathname}`)
+  }, [log, pathname])
   return (
     <div className="mx-auto mt-16 max-w-md rounded-2xl bg-white p-8 text-center ring-1 ring-slate-200">
       <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-red-50 text-red-500"><Shield className="h-6 w-6" /></span>

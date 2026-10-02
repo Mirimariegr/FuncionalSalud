@@ -26,7 +26,7 @@ Al hacer push a `main`, el workflow `.github/workflows/deploy.yml` publica la de
 | Mensajes | Chat con los pacientes y solicitudes por formulario (citas, facturas, documentación, datos personales), con estado abierta o resuelta. La ficha permite editar teléfono, email y dirección. |
 | Ficha 360º | Cabecera con alertas (alergias, datos declarados pendientes, consentimientos, tutor legal), resumen, expediente clínico (alergias, medicación, antecedentes, episodios), citas, tratamientos, documentos, consentimientos, económico y **línea temporal** filtrable. |
 | Episodios | Registro de visita con notas internas, juicio clínico, plan, resumen publicable y próxima acción (genera tarea). |
-| Sesión grabada | Al pulsar «Iniciar atención» el profesional graba la consulta con el micrófono (Google Chrome o Microsoft Edge), se transcribe en directo y al finalizar se propone la nota clínica para revisar y guardar en el historial. |
+| Sesión grabada | Al pulsar «Iniciar atención» el profesional graba la consulta con el micrófono (Google Chrome o Microsoft Edge) y se transcribe en directo. Tras al menos 1 minuto se genera el resumen; el profesional lo **acepta** (se añade al historial del paciente) o lo **rechaza** (no se guarda nada). |
 | Recetas | El profesional emite recetas desde la ficha; el paciente las ve en su portal con código para la farmacia. |
 | Documentos | Repositorio con revisión y **publicación controlada** al portal; cada visualización queda auditada. |
 | Consentimientos | Plantillas versionadas, envío, aceptación trazable con evidencias, vigencia, caducidad y revocación. |
@@ -42,7 +42,7 @@ Al hacer push a `main`, el workflow `.github/workflows/deploy.yml` publica la de
 ## Guion sugerido para la demo
 
 1. **Recepción (Silvia Ramos)**: Inicio → alertas → *Nuevo paciente* escribiendo «María García López» para ver la detección de duplicados → *Nueva cita* en un hueco ocupado para ver el control de solapes.
-2. **Profesional (Laura Méndez)**: en la Agenda abre una cita de hoy y pulsa «Iniciar atención · grabar y resumir», habla unos segundos → «Finalizar y resumir» → «Validar y guardar». Después, ficha de *María García López* → Expediente (alergias, validar el Omeprazol declarado) → *Registrar episodio* con próxima acción y resumen publicado → Línea temporal.
+2. **Profesional (Laura Méndez)**: en la Agenda abre una cita de hoy y pulsa «Iniciar atención · grabar y resumir», habla al menos un minuto → «Finalizar y resumir» → «Aceptar y añadir al historial» (o «Rechazar»). Después, ficha de *María García López* → Expediente (alergias, validar el Omeprazol declarado) → *Registrar episodio* con próxima acción y resumen publicado → Línea temporal.
 3. **Paciente (María García López)** en el portal: confirmar cita, firmar el consentimiento de imagen, aceptar y pagar el presupuesto, declarar una alergia.
 4. **Administración (Irene Campos)**: Tareas (aparecen las generadas desde el portal), Informes, Usuarios y permisos, Auditoría.
 5. Entrar como **Facturación** o **Privacidad** para ver cómo cambian menú y accesos (y el registro de accesos denegados).

@@ -25,7 +25,9 @@ export function ChatThread({ conversation, side, readOnly, onClose }: { conversa
   useEffect(() => {
     if ((side === 'clinic' && conversation.unreadClinic) || (side === 'patient' && conversation.unreadPatient)) markRead(conversation.id, side)
   }, [conversation, side, markRead])
-  useEffect(() => end.current?.scrollIntoView({ block: 'end' }), [conversation.messages.length, conversation.id])
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: 'end' })
+  }, [conversation.messages.length, conversation.id])
 
   const submit = () => {
     const t = text.trim()

@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
-import { Mic, Pause, Play, ShieldCheck, Sparkles, Square, Wand2 } from 'lucide-react'
+import { Check, Mic, Pause, Pencil, Play, Sparkles, Square, Wand2, X } from 'lucide-react'
 import { useStore } from '../store'
 import { summarizeTranscript, type ScriptLine } from '../data/sessionScripts'
 import { addDays, cx, pad, toDateKey } from '../lib/utils'
@@ -25,6 +25,9 @@ const SpeechRecognitionCtor = (window as unknown as { SpeechRecognition?: new ()
   ?? (window as unknown as { webkitSpeechRecognition?: new () => Recognition }).webkitSpeechRecognition
 
 type Step = 'consent' | 'recording' | 'review'
+
+/** Duración mínima de la conversación antes de poder generar el resumen. */
+const MIN_SECONDS = 60
 
 /**
  * Sesión clínica con grabación: al iniciar la atención se transcribe la conversación y,
@@ -56,6 +59,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
   const [publish, setPublish] = useState(true)
   const [countSession, setCountSession] = useState(!!treatment)
   const [showTranscript, setShowTranscript] = useState(false)
+  const [editing, setEditing] = useState(false)
 
   const [listening, setListening] = useState(false)
   const recRef = useRef<Recognition | null>(null)
@@ -85,7 +89,10 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
     return () => window.clearInterval(t)
   }, [step])
 
-  useEffect(() => endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }), [lines.length, interim])
+  // Llaves obligatorias: en Chrome reciente scrollIntoView devuelve una promesa y React la trataría como función de limpieza
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
+  }, [lines.length, interim])
   useEffect(() => () => stopMic(), []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const stopMic = () => {
@@ -208,6 +215,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
       nextActionDate: toDateKey(addDays(new Date(), sum.nextActionDays)),
     })
     setShowTranscript(!transcript)
+    setEditing(false)
     setStep('review')
   }
 
@@ -228,7 +236,14 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
       })
     }
     setStatus(appt.id, 'atendida')
-    toast('Sesión guardada en el historial del paciente')
+    log('Aceptación', 'Resumen de sesión', `Resumen aceptado por ${prof.name} y añadido al historial · ${p.firstName} ${p.lastName}`)
+    toast('Resumen aceptado y añadido al historial del paciente')
+    onClose()
+  }
+
+  const reject = () => {
+    log('Rechazo', 'Resumen de sesión', `Resumen descartado por ${prof.name}; no se ha guardado · ${p.firstName} ${p.lastName}`)
+    toast('Resumen rechazado: no se ha añadido nada al historial', 'info')
     onClose()
   }
 
@@ -241,15 +256,15 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
       open
       onClose={step === 'recording' ? () => undefined : close}
       size="lg"
-      title={<span key={step === 'review' ? 'r' : 'g'} className="flex items-center gap-2">{step === 'review' ? <Sparkles className="h-4 w-4 text-brand-600" /> : <Mic className="h-4 w-4 text-brand-600" />}{step === 'review' ? 'Revisa el resumen de la sesión' : 'Sesión con grabación y resumen automático'}</span>}
+      title={<span key={step === 'review' ? 'r' : 'g'} className="flex items-center gap-2">{step === 'review' ? <Sparkles className="h-4 w-4 text-brand-600" /> : <Mic className="h-4 w-4 text-brand-600" />}{step === 'review' ? 'Resumen de la sesión' : 'Sesión con grabación y resumen automático'}</span>}
       subtitle={`${p.firstName} ${p.lastName} · ${svc.name} · ${prof.name}`}
       footer={
         step === 'consent' ? (
           <Fragment key="consent"><Button variant="secondary" onClick={close}>Cancelar</Button><Button icon={Mic} disabled={!consent} onClick={start}>Empezar grabación</Button></Fragment>
         ) : step === 'recording' ? (
-          <Fragment key="recording"><Button key={paused ? 'resume' : 'pause'} variant="secondary" icon={paused ? Play : Pause} onClick={togglePause}>{paused ? 'Reanudar' : 'Pausar'}</Button><Button icon={Square} onClick={finish}>Finalizar y resumir</Button></Fragment>
+          <Fragment key="recording"><Button key={paused ? 'resume' : 'pause'} variant="secondary" icon={paused ? Play : Pause} onClick={togglePause}>{paused ? 'Reanudar' : 'Pausar'}</Button><Button key={seconds >= MIN_SECONDS ? 'ready' : `wait-${seconds}`} icon={Square} disabled={seconds < MIN_SECONDS} onClick={finish}>{seconds >= MIN_SECONDS ? 'Finalizar y resumir' : `Finalizar y resumir (en ${MIN_SECONDS - seconds} s)`}</Button></Fragment>
         ) : (
-          <Fragment key="review"><Button variant="secondary" onClick={close}>Descartar</Button><Button icon={ShieldCheck} disabled={!f.reason.trim()} onClick={save}>Validar y guardar en el historial</Button></Fragment>
+          <Fragment key="review"><Button variant="danger" icon={X} onClick={reject}>Rechazar</Button><Button icon={Check} disabled={!f.reason.trim()} onClick={save}>Aceptar y añadir al historial</Button></Fragment>
         )
       }
     >
@@ -289,7 +304,16 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
               {level.map((v, i) => <span key={i} className="w-1 shrink-0 rounded-full bg-brand-300 transition-[height] duration-100" style={{ height: `${Math.round(v * 100)}%` }} />)}
             </div>
           </div>
-          <div className="scroll-thin h-72 space-y-2 overflow-y-auto rounded-xl bg-slate-50 p-4">
+          <div>
+            <div className="mb-1 flex justify-between text-[11px] text-slate-500">
+              <span key={seconds >= MIN_SECONDS ? 'ok' : 'min'}>{seconds >= MIN_SECONDS ? '✓ Ya se puede generar el resumen' : 'Graba al menos 1 minuto de conversación'}</span>
+              <span>{Math.min(seconds, MIN_SECONDS)} / {MIN_SECONDS} s</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+              <div className={cx('h-full rounded-full transition-all', seconds >= MIN_SECONDS ? 'bg-emerald-500' : 'bg-brand-500')} style={{ width: `${Math.min(100, (seconds / MIN_SECONDS) * 100)}%` }} />
+            </div>
+          </div>
+          <div className="scroll-thin h-64 space-y-2 overflow-y-auto rounded-xl bg-slate-50 p-4">
             {lines.length === 0 && !interim && <p className="pt-24 text-center text-sm text-slate-400">Empieza a hablar; la transcripción aparecerá aquí.</p>}
             {lines.map((l, i) => (
               <div key={i} className="animate-fade-up text-sm">
@@ -300,25 +324,43 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
             <div ref={endRef} />
           </div>
           {micError && <p className="text-xs text-red-600">{micError}</p>}
-          <p className="text-xs text-slate-500">Cuando termine la consulta pulsa «Finalizar y resumir»: se generará la nota con observaciones, plan y próxima acción para que solo tengas que revisarla.</p>
+          <p className="text-xs text-slate-500">Cuando termine la consulta pulsa «Finalizar y resumir». Verás el resumen y podrás aceptarlo (se añade al historial) o rechazarlo.</p>
         </div>
       )}
 
       {step === 'review' && (
         <div className="space-y-4">
-          <div className="flex items-start gap-2 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">
-            <Wand2 className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>Borrador generado a partir de {mmss} de conversación. Revísalo y corrige lo que haga falta: nada se guarda sin tu validación.</span>
+          <div className="flex items-start justify-between gap-3 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">
+            <span className="flex items-start gap-2"><Wand2 className="mt-0.5 h-4 w-4 shrink-0" />Resumen generado a partir de {mmss} de conversación. Revísalo: si lo aceptas se añadirá al historial del paciente; si lo rechazas no se guarda nada.</span>
+            <Button key={editing ? 'done' : 'edit'} size="sm" variant="secondary" icon={editing ? Check : Pencil} onClick={() => setEditing(!editing)}>{editing ? 'Listo' : 'Editar'}</Button>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Motivo" className="sm:col-span-2"><Input value={f.reason} onChange={set('reason')} /></Field>
-            <Field label="Observaciones / exploración (interno)" className="sm:col-span-2"><Textarea value={f.observations} onChange={set('observations')} /></Field>
-            <Field label="Juicio clínico"><Input value={f.diagnosis} onChange={set('diagnosis')} /></Field>
-            <Field label="Próxima acción"><Input value={f.nextAction} onChange={set('nextAction')} /></Field>
-            <Field label="Plan" className="sm:col-span-2"><Textarea value={f.plan} onChange={set('plan')} className="min-h-[60px]" /></Field>
-            <Field label="Resumen para el paciente" className="sm:col-span-2"><Textarea value={f.publicSummary} onChange={set('publicSummary')} className="min-h-[60px]" /></Field>
-            <Field label="Fecha próxima acción"><Input type="date" value={f.nextActionDate} onChange={set('nextActionDate')} /></Field>
-          </div>
+          {editing ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Motivo" className="sm:col-span-2"><Input value={f.reason} onChange={set('reason')} /></Field>
+              <Field label="Lo que refiere el paciente y exploración (interno)" className="sm:col-span-2"><Textarea value={f.observations} onChange={set('observations')} /></Field>
+              <Field label="Juicio clínico"><Input value={f.diagnosis} onChange={set('diagnosis')} /></Field>
+              <Field label="Próxima acción"><Input value={f.nextAction} onChange={set('nextAction')} /></Field>
+              <Field label="Plan e indicaciones" className="sm:col-span-2"><Textarea value={f.plan} onChange={set('plan')} className="min-h-[60px]" /></Field>
+              <Field label="Resumen para el paciente" className="sm:col-span-2"><Textarea value={f.publicSummary} onChange={set('publicSummary')} className="min-h-[60px]" /></Field>
+              <Field label="Fecha próxima acción"><Input type="date" value={f.nextActionDate} onChange={set('nextActionDate')} /></Field>
+            </div>
+          ) : (
+            <dl className="divide-y divide-slate-100 rounded-xl ring-1 ring-slate-200">
+              {([
+                ['Motivo', f.reason],
+                ['Lo que refiere el paciente', f.observations],
+                ['Juicio clínico', f.diagnosis],
+                ['Plan e indicaciones', f.plan],
+                ['Próxima acción', f.nextAction ? `${f.nextAction} · ${f.nextActionDate.split('-').reverse().join('/')}` : ''],
+                ['Resumen para el paciente', f.publicSummary],
+              ] as const).map(([label, value]) => (
+                <div key={label} className="grid gap-1 px-4 py-3 sm:grid-cols-[180px_1fr]">
+                  <dt className="text-xs font-medium text-slate-500">{label}</dt>
+                  <dd className={cx('text-sm', value ? 'text-slate-800' : 'italic text-slate-400')}>{value || 'Sin datos: pulsa «Editar» para completarlo'}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
           <div className="flex flex-wrap gap-5 rounded-xl bg-slate-50 p-3">
             <Toggle checked={publish} onChange={setPublish} label="Publicar resumen en el portal del paciente" />
             {treatment && <Toggle checked={countSession} onChange={setCountSession} label={`Contar sesión de «${treatment.name}»`} />}
