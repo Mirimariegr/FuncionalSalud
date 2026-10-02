@@ -26,7 +26,7 @@ const SpeechRecognitionCtor = (window as unknown as { SpeechRecognition?: new ()
 
 type Step = 'consent' | 'recording' | 'review'
 
-/** Duración mínima de la conversación antes de poder generar el resumen. */
+/** Duración recomendada de la conversación para que el resumen tenga contenido suficiente. */
 const MIN_SECONDS = 60
 
 /**
@@ -100,7 +100,16 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
     window.clearTimeout(restartRef.current)
     const rec = recRef.current
     recRef.current = null
-    try { rec?.stop() } catch { /* ya parado */ }
+    if (rec) {
+      // Se desconectan los avisos y se aborta: así no llega más texto tras pulsar «Finalizar»
+      rec.onresult = null
+      rec.onend = null
+      rec.onerror = null
+      rec.onstart = null
+      try { rec.abort() } catch { try { rec.stop() } catch { /* ya parado */ } }
+    }
+    interimRef.current = ''
+    setInterim('')
     setListening(false)
   }
 
@@ -202,9 +211,13 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
   }
 
   const finish = () => {
+    // Lo que se estaba diciendo al pulsar «Finalizar» también cuenta
+    const pending = interimRef.current.trim()
+    const texts = [...lines.map((l) => l.text), ...(pending ? [pending] : [])]
+    if (pending) setLines((l) => [...l, { who: 'Profesional', text: pending }])
     stopMic()
-    const transcript = lines.map((l) => l.text).join('\n')
-    const sum = summarizeTranscript(lines.map((l) => l.text), svc.name)
+    const transcript = texts.join('\n')
+    const sum = summarizeTranscript(texts, svc.name)
     setF({
       reason: sum.reason,
       observations: sum.observations,
@@ -262,7 +275,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
         step === 'consent' ? (
           <Fragment key="consent"><Button variant="secondary" onClick={close}>Cancelar</Button><Button icon={Mic} disabled={!consent} onClick={start}>Empezar grabación</Button></Fragment>
         ) : step === 'recording' ? (
-          <Fragment key="recording"><Button key={paused ? 'resume' : 'pause'} variant="secondary" icon={paused ? Play : Pause} onClick={togglePause}>{paused ? 'Reanudar' : 'Pausar'}</Button><Button key={seconds >= MIN_SECONDS ? 'ready' : `wait-${seconds}`} icon={Square} disabled={seconds < MIN_SECONDS} onClick={finish}>{seconds >= MIN_SECONDS ? 'Finalizar y resumir' : `Finalizar y resumir (en ${MIN_SECONDS - seconds} s)`}</Button></Fragment>
+          <Fragment key="recording"><Button key={paused ? 'resume' : 'pause'} variant="secondary" icon={paused ? Play : Pause} onClick={togglePause}>{paused ? 'Reanudar' : 'Pausar'}</Button><Button icon={Square} onClick={finish}>Finalizar y resumir</Button></Fragment>
         ) : (
           <Fragment key="review"><Button variant="danger" icon={X} onClick={reject}>Rechazar</Button><Button icon={Check} disabled={!f.reason.trim()} onClick={save}>Aceptar y añadir al historial</Button></Fragment>
         )
@@ -306,7 +319,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
           </div>
           <div>
             <div className="mb-1 flex justify-between text-[11px] text-slate-500">
-              <span key={seconds >= MIN_SECONDS ? 'ok' : 'min'}>{seconds >= MIN_SECONDS ? '✓ Ya se puede generar el resumen' : 'Graba al menos 1 minuto de conversación'}</span>
+              <span key={seconds >= MIN_SECONDS ? 'ok' : 'min'}>{seconds >= MIN_SECONDS ? '✓ Duración recomendada alcanzada' : 'Recomendado: al menos 1 minuto de conversación'}</span>
               <span>{Math.min(seconds, MIN_SECONDS)} / {MIN_SECONDS} s</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
