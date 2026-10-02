@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Check, Mic, Pause, Pencil, Play, Sparkles, Square, Wand2, X } from 'lucide-react'
 import { useStore } from '../store'
-import { summarizeTranscript, type ScriptLine } from '../data/sessionScripts'
+import { guessSpeaker, summarizeTranscript, type ScriptLine } from '../data/sessionScripts'
 import { addDays, cx, pad, toDateKey } from '../lib/utils'
 import type { Appointment } from '../types'
 import { Avatar, Button, Field, Input, Modal, Textarea, Toggle } from './ui'
@@ -52,6 +52,12 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
   const [paused, setPaused] = useState(false)
   const [seconds, setSeconds] = useState(0)
   const [lines, setLines] = useState<ScriptLine[]>([])
+  // Quién habla: automático (por cómo está dicha la frase) o fijado por el profesional
+  const [speaker, setSpeaker] = useState<'auto' | ScriptLine['who']>('auto')
+  const speakerRef = useRef<'auto' | ScriptLine['who']>('auto')
+  speakerRef.current = speaker
+  const whoFor = (text: string): ScriptLine['who'] => (speakerRef.current === 'auto' ? guessSpeaker(text) : speakerRef.current)
+  const toggleWho = (i: number) => setLines((l) => l.map((x, j) => (j === i ? { ...x, who: x.who === 'Paciente' ? 'Profesional' : 'Paciente' } : x)))
   const [interim, setInterim] = useState('')
   const [micError, setMicError] = useState('')
   const [level, setLevel] = useState<number[]>(Array(32).fill(0.1))
@@ -136,7 +142,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
         const r = e.results[i]
         const text = r?.[0]?.transcript?.trim() ?? ''
         if (!text) continue
-        if (r.isFinal) setLines((l) => [...l, { who: 'Profesional', text }])
+        if (r.isFinal) setLines((l) => [...l, { who: whoFor(text), text }])
         else partial += `${text} `
       }
       interimRef.current = partial.trim()
@@ -157,7 +163,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
       // Si Chrome corta con texto a medias, se conserva
       if (interimRef.current) {
         const text = interimRef.current
-        setLines((l) => [...l, { who: 'Profesional', text }])
+        setLines((l) => [...l, { who: whoFor(text), text }])
         interimRef.current = ''
         setInterim('')
       }
@@ -213,11 +219,11 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
   const finish = () => {
     // Lo que se estaba diciendo al pulsar «Finalizar» también cuenta
     const pending = interimRef.current.trim()
-    const texts = [...lines.map((l) => l.text), ...(pending ? [pending] : [])]
-    if (pending) setLines((l) => [...l, { who: 'Profesional', text: pending }])
+    const all: ScriptLine[] = [...lines, ...(pending ? [{ who: whoFor(pending), text: pending }] : [])]
+    if (pending) setLines(all)
     stopMic()
-    const transcript = texts.join('\n')
-    const sum = summarizeTranscript(texts, svc.name)
+    const transcript = all.map((l) => l.text).join('\n')
+    const sum = summarizeTranscript(all, svc.name)
     setF({
       reason: sum.reason,
       observations: sum.observations,
@@ -233,7 +239,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
   }
 
   const save = () => {
-    const transcript = lines.map((l) => l.text).join('\n')
+    const transcript = lines.map((l) => `${l.who}: ${l.text}`).join('\n')
     const ep = saveEpisode({
       patientId: p.id, professionalId: prof.id, appointmentId: appt.id, treatmentId: treatment?.id, date: new Date().toISOString(),
       reason: f.reason, observations: f.observations, diagnosis: f.diagnosis, plan: f.plan, publicSummary: f.publicSummary,
@@ -326,10 +332,22 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
               <div className={cx('h-full rounded-full transition-all', seconds >= MIN_SECONDS ? 'bg-emerald-500' : 'bg-brand-500')} style={{ width: `${Math.min(100, (seconds / MIN_SECONDS) * 100)}%` }} />
             </div>
           </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-slate-500">Quién habla:</span>
+            {(['auto', 'Profesional', 'Paciente'] as const).map((k) => (
+              <button key={k} type="button" onClick={() => setSpeaker(k)} className={cx('rounded-full px-3 py-1 font-medium ring-1 transition', speaker === k ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200 hover:ring-slate-300')}>
+                {k === 'auto' ? 'Detectar automáticamente' : k}
+              </button>
+            ))}
+            <span className="text-slate-400">· Pulsa la etiqueta de una frase para corregirla</span>
+          </div>
           <div className="scroll-thin h-64 space-y-2 overflow-y-auto rounded-xl bg-slate-50 p-4">
             {lines.length === 0 && !interim && <p className="pt-24 text-center text-sm text-slate-400">Empieza a hablar; la transcripción aparecerá aquí.</p>}
             {lines.map((l, i) => (
-              <div key={i} className="animate-fade-up text-sm">
+              <div key={`${i}-${l.who}`} className="animate-fade-up flex items-start gap-2 text-sm">
+                <button type="button" onClick={() => toggleWho(i)} title="Cambiar quién habla" className={cx('mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1', l.who === 'Profesional' ? 'bg-brand-50 text-brand-700 ring-brand-200' : 'bg-violet-50 text-violet-700 ring-violet-200')}>
+                  {l.who}
+                </button>
                 <span className="text-slate-700">{l.text}</span>
               </div>
             ))}
@@ -384,7 +402,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
             </button>
             {showTranscript && (
               <div className="scroll-thin mt-2 max-h-48 space-y-1 overflow-y-auto rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
-                {lines.length === 0 ? <p>No se ha transcrito nada. Puedes escribir la nota a mano.</p> : lines.map((l, i) => <p key={i}>{l.text}</p>)}
+                {lines.length === 0 ? <p>No se ha transcrito nada. Puedes escribir la nota a mano.</p> : lines.map((l, i) => <p key={i}><b className={l.who === 'Profesional' ? 'text-brand-700' : 'text-violet-700'}>{l.who}:</b> {l.text}</p>)}
               </div>
             )}
           </div>

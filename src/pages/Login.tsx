@@ -9,6 +9,7 @@ import { cx } from '../lib/utils'
 export default function Login() {
   const users = useStore((s) => s.users)
   const patients = useStore((s) => s.patients)
+  const professionals = useStore((s) => s.professionals)
   const login = useStore((s) => s.login)
   const navigate = useNavigate()
   const [mode, setMode] = useState<'staff' | 'patient'>('staff')
@@ -92,7 +93,7 @@ export default function Login() {
                   <Avatar name={u.name} />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-800">{u.name}</p>
-                    <p className="text-xs text-slate-500">{roleLabel[u.role]}</p>
+                    <p className="text-xs text-slate-500">{roleLabel[u.role]}{u.professionalId && ` · ${professionals.find((x) => x.id === u.professionalId)?.specialty ?? ''}`}</p>
                   </div>
                   <ArrowRight className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-600" />
                 </button>

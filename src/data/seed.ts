@@ -177,6 +177,7 @@ export function buildSeed(): DB {
     { id: 'u3', name: 'Silvia Ramos', role: 'recepcion', email: 'recepcion@funcionalsalud.es', centerIds: ['c1'] },
     { id: 'u4', name: 'Laura Méndez', role: 'sanitario', email: 'laura.mendez@funcionalsalud.es', centerIds: ['c1', 'c2'], professionalId: 'p1' },
     { id: 'u7', name: 'Dra. Carmen Ruiz', role: 'sanitario', email: 'carmen.ruiz@funcionalsalud.es', centerIds: ['c1'], professionalId: 'p3' },
+    { id: 'u8', name: 'Dr. Andrés Soler', role: 'sanitario', email: 'andres.soler@funcionalsalud.es', centerIds: ['c1', 'c2'], professionalId: 'p4' },
     { id: 'u5', name: 'Pedro Gómez', role: 'facturacion', email: 'facturacion@funcionalsalud.es', centerIds: ['c1', 'c2'] },
     { id: 'u6', name: 'Elvira Sanz', role: 'privacidad', email: 'dpo@funcionalsalud.es', centerIds: ['c1', 'c2'] },
   ]

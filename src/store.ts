@@ -88,7 +88,7 @@ interface State extends DB {
 
 const roleShort = (r: AuditEntry['role']) => (r === 'recepcion' ? 'Recepción' : r === 'facturacion' ? 'Administración' : r === 'sanitario' ? 'Profesional' : r === 'paciente' ? 'Paciente' : 'Clínica')
 
-const STORAGE_KEY = 'funcional-salud-demo-v2'
+const STORAGE_KEY = 'funcional-salud-demo-v3'
 
 export const useStore = create<State>()(
   persist(
