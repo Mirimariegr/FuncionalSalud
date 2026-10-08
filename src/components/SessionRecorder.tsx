@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Check, Mic, Pause, Pencil, Play, Sparkles, Square, Wand2, X } from 'lucide-react'
 import { useStore } from '../store'
+import { speechLang } from '../i18n/lang'
 import { guessSpeaker, summarizeTranscript, type ScriptLine } from '../data/sessionScripts'
 import { addDays, cx, pad, toDateKey } from '../lib/utils'
 import type { Appointment } from '../types'
@@ -129,7 +130,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
   const listen = () => {
     if (!SpeechRecognitionCtor || !activeRef.current || pausedRef.current) return
     const rec = new SpeechRecognitionCtor()
-    rec.lang = 'es-ES'
+    rec.lang = speechLang()
     rec.continuous = true
     rec.interimResults = true
     rec.onstart = () => setListening(true)
@@ -348,10 +349,10 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
                 <button type="button" onClick={() => toggleWho(i)} title="Cambiar quién habla" className={cx('mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1', l.who === 'Profesional' ? 'bg-brand-50 text-brand-700 ring-brand-200' : 'bg-violet-50 text-violet-700 ring-violet-200')}>
                   {l.who}
                 </button>
-                <span className="text-slate-700">{l.text}</span>
+                <span data-no-translate className="text-slate-700">{l.text}</span>
               </div>
             ))}
-            {interim && <p key={interim} className="text-sm italic text-slate-400">{interim}</p>}
+            {interim && <p key={interim} data-no-translate className="text-sm italic text-slate-400">{interim}</p>}
             <div ref={endRef} />
           </div>
           {micError && <p className="text-xs text-red-600">{micError}</p>}
@@ -387,7 +388,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
               ] as const).map(([label, value]) => (
                 <div key={label} className="grid gap-1 px-4 py-3 sm:grid-cols-[180px_1fr]">
                   <dt className="text-xs font-medium text-slate-500">{label}</dt>
-                  <dd className={cx('text-sm', value ? 'text-slate-800' : 'italic text-slate-400')}>{value || 'Sin datos: pulsa «Editar» para completarlo'}</dd>
+                  <dd data-no-translate={value ? '' : undefined} className={cx('text-sm', value ? 'text-slate-800' : 'italic text-slate-400')}>{value || 'Sin datos: pulsa «Editar» para completarlo'}</dd>
                 </div>
               ))}
             </dl>
@@ -402,7 +403,7 @@ export function SessionRecorder({ appt, onClose }: { appt: Appointment; onClose:
             </button>
             {showTranscript && (
               <div className="scroll-thin mt-2 max-h-48 space-y-1 overflow-y-auto rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
-                {lines.length === 0 ? <p>No se ha transcrito nada. Puedes escribir la nota a mano.</p> : lines.map((l, i) => <p key={i}><b className={l.who === 'Profesional' ? 'text-brand-700' : 'text-violet-700'}>{l.who}:</b> {l.text}</p>)}
+                {lines.length === 0 ? <p>No se ha transcrito nada. Puedes escribir la nota a mano.</p> : lines.map((l, i) => <p key={i}><b className={l.who === 'Profesional' ? 'text-brand-700' : 'text-violet-700'}>{l.who}:</b> <span data-no-translate>{l.text}</span></p>)}
               </div>
             )}
           </div>

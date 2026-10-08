@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useStore } from './store'
+import { useLang } from './i18n/lang'
 import { Toaster } from './components/ui'
 import Login from './pages/Login'
 import StaffLayout from './components/StaffLayout'
@@ -36,8 +37,10 @@ function RequireSession({ kind, children }: { kind: 'staff' | 'patient'; childre
 }
 
 export default function App() {
+  // Al cambiar de idioma se vuelve a pintar todo para que fechas e importes usen el nuevo formato
+  const lang = useLang((s) => s.lang)
   return (
-    <HashRouter>
+    <HashRouter key={lang}>
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/app" element={<RequireSession kind="staff"><StaffLayout /></RequireSession>}>

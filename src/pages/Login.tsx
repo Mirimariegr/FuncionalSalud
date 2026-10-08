@@ -5,6 +5,7 @@ import { useStore } from '../store'
 import { roleLabel } from '../lib/labels'
 import { Avatar, Button } from '../components/ui'
 import { cx } from '../lib/utils'
+import { LangSwitch } from '../components/LangSwitch'
 
 export default function Login() {
   const users = useStore((s) => s.users)
@@ -57,7 +58,8 @@ export default function Login() {
       </aside>
 
       {/* Acceso */}
-      <main className="flex flex-1 items-center justify-center p-6 sm:p-12">
+      <main className="relative flex flex-1 items-center justify-center p-6 sm:p-12">
+        <div className="absolute right-4 top-4 sm:right-6 sm:top-6"><LangSwitch /></div>
         <div className="w-full max-w-lg animate-fade-up">
           <div className="mb-8 flex items-center gap-2 lg:hidden">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-white">

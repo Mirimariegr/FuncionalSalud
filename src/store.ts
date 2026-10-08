@@ -22,6 +22,7 @@ import type {
 } from './types'
 import { addMonths, normalize, todayKey, uid } from './lib/utils'
 import { apptStatus } from './lib/labels'
+import { locale } from './i18n/lang'
 
 export interface Toast {
   id: string
@@ -203,7 +204,7 @@ export const useStore = create<State>()(
             (x) => x.id !== ignoreId && !['cancelada', 'replanificada', 'no_presentada'].includes(x.status) && x.start < a.end && a.start < x.end,
           )
           const prof = active.find((x) => x.professionalId === a.professionalId)
-          if (prof) errors.push(`El profesional ya tiene una cita de ${new Date(prof.start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} a ${new Date(prof.end).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.`)
+          if (prof) errors.push(`El profesional ya tiene una cita de ${new Date(prof.start).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })} a ${new Date(prof.end).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}.`)
           if (a.roomId) {
             const room = active.find((x) => x.roomId === a.roomId)
             if (room) errors.push(`La sala está ocupada en ese horario (${pname(room.patientId)}).`)

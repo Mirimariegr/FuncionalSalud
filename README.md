@@ -37,6 +37,8 @@ Al hacer push a `main`, el workflow `.github/workflows/deploy.yml` publica la de
 | Usuarios y permisos | Usuarios y matriz de acceso por rol (Anexo A). |
 | Auditoría | Registro de accesos, cambios, publicaciones y exportaciones. |
 
+**Idioma ES / EN**: el selector de la cabecera (y de la pantalla de acceso) cambia toda la interfaz y los datos de ejemplo entre español e inglés, y se recuerda en el navegador. Fechas e importes siguen el idioma elegido. En inglés la transcripción de la sesión escucha en inglés; el resumen automático se genera con reglas en español, así que en inglés conviene revisarlo o completarlo a mano.
+
 **Portal del paciente** (responsive, sin instalar nada): recetas activas con pantalla «Mostrar en la farmacia», chat y solicitudes a administración, próxima cita con confirmar / cambiar / cancelar, pedir cita en huecos realmente libres, documentos publicados, firma de consentimientos con verificación OTP simulada, tratamientos y evolución, presupuestos (aceptar y pago online simulado), datos personales, preferencias de comunicación, declaración de alergias o medicación para revisión y solicitud de derechos RGPD.
 
 ## Guion sugerido para la demo

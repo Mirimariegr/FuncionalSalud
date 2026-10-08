@@ -1,3 +1,5 @@
+import { locale } from '../i18n/lang'
+
 export const uid = (prefix = 'id') => `${prefix}_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-3)}`
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ')
@@ -36,21 +38,28 @@ export const atTime = (d: Date, h: number, m = 0) => {
 
 export const sameDay = (a: Date | string, b: Date | string) => toDateKey(new Date(a)) === toDateKey(new Date(b))
 
-const dateFmt = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
-const dateShortFmt = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short' })
-const timeFmt = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit' })
-const longFmt = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-const moneyFmt = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' })
+// Los formatos siguen el idioma elegido (es-ES / en-GB); se crean una vez por idioma
+const fmtCache = new Map<string, Intl.DateTimeFormat | Intl.NumberFormat>()
+const fmt = <T extends Intl.DateTimeFormat | Intl.NumberFormat>(key: string, make: (loc: string) => T): T => {
+  const k = `${locale()}|${key}`
+  if (!fmtCache.has(k)) fmtCache.set(k, make(locale()))
+  return fmtCache.get(k) as T
+}
+const dateFmt = () => fmt('date', (l) => new Intl.DateTimeFormat(l, { day: '2-digit', month: 'short', year: 'numeric' }))
+const dateShortFmt = () => fmt('dateShort', (l) => new Intl.DateTimeFormat(l, { day: '2-digit', month: 'short' }))
+const timeFmt = () => fmt('time', (l) => new Intl.DateTimeFormat(l, { hour: '2-digit', minute: '2-digit' }))
+const longFmt = () => fmt('long', (l) => new Intl.DateTimeFormat(l, { weekday: 'long', day: 'numeric', month: 'long' }))
+const moneyFmt = () => fmt('money', (l) => new Intl.NumberFormat(l, { style: 'currency', currency: 'EUR' }))
 
-export const fDate = (s?: string) => (s ? dateFmt.format(new Date(s)) : '—')
-export const fDateShort = (s?: string) => (s ? dateShortFmt.format(new Date(s)) : '—')
-export const fTime = (s: string) => timeFmt.format(new Date(s))
+export const fDate = (s?: string) => (s ? dateFmt().format(new Date(s)) : '—')
+export const fDateShort = (s?: string) => (s ? dateShortFmt().format(new Date(s)) : '—')
+export const fTime = (s: string) => timeFmt().format(new Date(s))
 export const fDateTime = (s?: string) => (s ? `${fDate(s)} · ${fTime(s)}` : '—')
 export const fLong = (d: Date | string) => {
-  const t = longFmt.format(new Date(d))
+  const t = longFmt().format(new Date(d))
   return t.charAt(0).toUpperCase() + t.slice(1)
 }
-export const fMoney = (n: number) => moneyFmt.format(n)
+export const fMoney = (n: number) => moneyFmt().format(n)
 
 export const age = (birth: string) => {
   const b = new Date(birth)

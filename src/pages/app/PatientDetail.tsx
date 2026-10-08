@@ -1,3 +1,4 @@
+import { locale } from '../../i18n/lang'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
@@ -534,7 +535,7 @@ function ApptRow({ a, onClick }: { a: Appointment; onClick: () => void }) {
     <li>
       <button onClick={onClick} className="flex w-full items-center gap-4 px-5 py-3 text-left hover:bg-slate-50">
         <div className="w-12 shrink-0 rounded-lg bg-slate-50 py-1 text-center ring-1 ring-slate-200">
-          <p className="text-[10px] uppercase text-slate-500">{d.toLocaleDateString('es-ES', { month: 'short' })}</p>
+          <p className="text-[10px] uppercase text-slate-500">{d.toLocaleDateString(locale(), { month: 'short' })}</p>
           <p className="text-base font-semibold leading-tight">{d.getDate()}</p>
         </div>
         <div className="flex-1">

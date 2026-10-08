@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
 import './index.css'
+import { initTranslator } from './i18n/translate'
 
 // El traductor automático del navegador y algunas extensiones (correctores, traductores)
 // reescriben el texto de la página. Se pide que no lo hagan…
@@ -22,6 +23,8 @@ if (typeof Node === 'function' && Node.prototype) {
     return originalInsertBefore.call(this, newNode, referenceNode) as T
   }
 }
+
+initTranslator()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

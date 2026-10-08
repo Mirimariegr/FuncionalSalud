@@ -1,3 +1,4 @@
+import { locale } from '../../i18n/lang'
 import { useMemo, useState } from 'react'
 import { BarChart3, CalendarCheck2, CalendarX2, Download, Euro, History, Mic, Users, UserX } from 'lucide-react'
 import { budgetTotal, useStore } from '../../store'
@@ -168,7 +169,7 @@ function HistoryTab() {
   const rows = months.map((m) => {
     const ap = appointments.filter((a) => inMonth(a.start, m) && a.start <= new Date().toISOString())
     return {
-      label: (() => { const t = m.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1) })(),
+      label: (() => { const t = m.toLocaleDateString(locale(), { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1) })(),
       done: ap.filter((a) => a.status === 'atendida').length,
       noShow: ap.filter((a) => a.status === 'no_presentada').length,
       cancelled: ap.filter((a) => a.status === 'cancelada').length,

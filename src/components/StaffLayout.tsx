@@ -28,6 +28,7 @@ import { roleLabel } from '../lib/labels'
 import { cx, normalize, todayKey } from '../lib/utils'
 import { Avatar, Badge } from './ui'
 import { ErrorBoundary } from './ErrorBoundary'
+import { LangSwitch } from './LangSwitch'
 
 const nav: { to: string; label: string; icon: LucideIcon; module: Module; group: string }[] = [
   { to: '/app', label: 'Inicio', icon: LayoutDashboard, module: 'dashboard', group: 'Operativa' },
@@ -142,6 +143,7 @@ export default function StaffLayout() {
           </button>
           <GlobalSearch />
           <div className="ml-auto flex items-center gap-2">
+            <LangSwitch />
             <button onClick={() => navigate('/app/tareas')} className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100" title="Tareas y alertas">
               <Bell className="h-5 w-5" />
               {overdue > 0 && <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">{overdue}</span>}

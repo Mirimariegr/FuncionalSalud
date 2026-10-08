@@ -4,6 +4,7 @@ import { useCurrentPatient, useStore } from '../store'
 import { cx } from '../lib/utils'
 import { Avatar } from './ui'
 import { ErrorBoundary } from './ErrorBoundary'
+import { LangSwitch } from './LangSwitch'
 
 const items = [
   { to: '/portal', label: 'Inicio', icon: Home },
@@ -35,6 +36,7 @@ export default function PatientLayout() {
             <p className="text-[11px] text-slate-500">Portal del paciente</p>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <LangSwitch />
             <Avatar name={`${p.firstName} ${p.lastName}`} size="sm" />
             <span className="hidden text-sm font-medium sm:block">{p.firstName}</span>
             <button onClick={() => { logout(); navigate('/') }} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="Salir"><LogOut className="h-4 w-4" /></button>
