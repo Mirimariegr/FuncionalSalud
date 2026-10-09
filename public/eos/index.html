@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
-    <title>EOS · Subir documentos</title>
+    <title>EOS · Subir contratos</title>
     <style>
       :root {
         --brand-50: #f0fdfa;
@@ -183,6 +183,14 @@
         margin: 0;
         overflow-wrap: anywhere;
       }
+      .person {
+        margin: 14px 0 0;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .person + dl {
+        margin-top: 6px;
+      }
       .msg {
         margin: 10px 0 0;
         font-size: 14px;
@@ -199,10 +207,10 @@
   <body>
     <main>
       <header>
-        <h1>EOS · Subir documentos</h1>
+        <h1>EOS · Subir contratos</h1>
         <p>
-          Sube informes, analíticas, facturas u otros documentos en PDF o imagen. Se extraen los datos
-          automáticamente y se añaden como una fila al Google Sheet de EOS.
+          Sube los contratos en PDF (o una foto o escaneo). Se identifican todos los intervinientes y se
+          añade una fila por cada uno al Google Sheet de EOS con su DNI/NIE, nombre y dirección.
         </p>
       </header>
 
@@ -213,17 +221,12 @@
         </label>
         <input id="file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple hidden />
 
-        <div class="fields">
-          <label>Subido por (opcional)<input type="text" id="subidoPor" placeholder="Nombre de quien sube" /></label>
-          <label>Notas (opcional)<input type="text" id="notas" placeholder="Comentario para la fila" /></label>
-        </div>
-
         <button type="submit" id="send" disabled>Procesar documentos</button>
       </form>
 
       <ul id="list"></ul>
 
-      <footer>Los documentos se procesan en n8n con Claude y solo se guardan los datos extraídos en el Sheet.</footer>
+      <footer>Los contratos se procesan en n8n con Claude y solo se guardan en el Sheet los datos extraídos.</footer>
     </main>
 
     <script>
@@ -231,19 +234,16 @@
       // Se puede sobrescribir con ?webhook=<url> para probar con la URL de test.
       const WEBHOOK_URL =
         new URLSearchParams(location.search).get('webhook') ||
-        'https://n8n-g3mx.srv1848372.hstgr.cloud/webhook/eos-documento'
+        'https://n8n-g3mx.srv1848372.hstgr.cloud/webhook/6cadb263-4805-4c23-9fb5-23b5088784e8/eos-documento'
       const MAX_BYTES = 20 * 1024 * 1024
       const ACCEPTED = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
       const FIELDS = [
-        'Tipo de documento',
-        'Paciente',
         'DNI/NIE',
-        'Fecha del documento',
-        'Profesional',
-        'Centro',
-        'Diagnóstico / motivo',
-        'Importe',
-        'Resumen',
+        'DIRECCION PARTICULAR COMPLETA',
+        'POBLACION',
+        'PROVINCIA',
+        'PAIS',
+        'CODIGO POSTAL',
       ]
 
       const form = document.getElementById('form')
@@ -299,18 +299,23 @@
         li.appendChild(p)
       }
 
-      function showData(li, datos) {
-        setStatus(li, 'Añadido al Sheet', 'ok')
-        const dl = document.createElement('dl')
-        FIELDS.forEach((key) => {
-          if (!datos[key]) return
-          const dt = document.createElement('dt')
-          dt.textContent = key
-          const dd = document.createElement('dd')
-          dd.textContent = datos[key]
-          dl.append(dt, dd)
+      function showRows(li, filas) {
+        setStatus(li, filas.length === 1 ? '1 fila añadida' : filas.length + ' filas añadidas', 'ok')
+        filas.forEach((fila) => {
+          const title = document.createElement('p')
+          title.className = 'person'
+          title.textContent = fila['NOMBRE INTERVINIENTE'] || 'Interviniente sin nombre'
+          const dl = document.createElement('dl')
+          FIELDS.forEach((key) => {
+            if (!fila[key]) return
+            const dt = document.createElement('dt')
+            dt.textContent = key
+            const dd = document.createElement('dd')
+            dd.textContent = fila[key]
+            dl.append(dt, dd)
+          })
+          li.append(title, dl)
         })
-        li.appendChild(dl)
       }
 
       async function upload(file, li) {
@@ -320,8 +325,6 @@
         setStatus(li, 'Procesando…', 'run')
         const body = new FormData()
         body.append('file', file, file.name)
-        body.append('subidoPor', document.getElementById('subidoPor').value.trim())
-        body.append('notas', document.getElementById('notas').value.trim())
 
         try {
           const res = await fetch(WEBHOOK_URL, { method: 'POST', body })
@@ -330,7 +333,7 @@
             const detail = typeof data.error === 'string' ? data.error : 'Respuesta ' + res.status + ' del servidor.'
             return showError(li, detail)
           }
-          showData(li, data.datos || {})
+          showRows(li, data.filas || [])
         } catch (err) {
           showError(li, 'No se pudo conectar con el servicio. Comprueba que el workflow de n8n está activo.')
         }
