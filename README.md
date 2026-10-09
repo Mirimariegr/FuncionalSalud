@@ -41,9 +41,9 @@ Al hacer push a `main`, el workflow `.github/workflows/deploy.yml` publica la de
 
 **Portal del paciente** (responsive, sin instalar nada): recetas activas con pantalla «Mostrar en la farmacia», chat y solicitudes a administración, próxima cita con confirmar / cambiar / cancelar, pedir cita en huecos realmente libres, documentos publicados, firma de consentimientos con verificación OTP simulada, tratamientos y evolución, presupuestos (aceptar y pago online simulado), datos personales, preferencias de comunicación, declaración de alergias o medicación para revisión y solicitud de derechos RGPD.
 
-## EOS · Subida de documentos a Google Sheet
+## EOS · Extracción de datos de contratos a Google Sheet
 
-Página independiente en `public/eos/index.html`, publicada en https://mirimariegr.github.io/FuncionalSalud/eos/. Envía cada PDF o imagen al webhook de n8n `eos-documento` (workflow «EOS · Documento a Google Sheet»), donde Claude extrae tipo de documento, paciente, DNI/NIE, fecha, profesional, centro, diagnóstico, importe y resumen, y se añade una fila en la pestaña **Documentos** del Sheet **EOS**. Para probar con la URL de test de n8n: `.../eos/?webhook=<url-de-test>`.
+Página independiente en `public/eos/index.html`, publicada en https://mirimariegr.github.io/FuncionalSalud/eos/. Envía cada contrato (PDF o imagen) al webhook de n8n `eos-documento` (workflow «EOS · Documento a Google Sheet»), donde Claude identifica a todos los intervinientes y se añade **una fila por interviniente** en «Hoja 1» del Sheet de EOS con: NOMBRE PDF, DNI/NIE, NOMBRE INTERVINIENTE (nombre y dos apellidos), DIRECCION PARTICULAR COMPLETA, POBLACION, PROVINCIA, PAIS y CODIGO POSTAL. Para probar con la URL de test de n8n: `.../eos/?webhook=<url-de-test>`.
 
 ## Guion sugerido para la demo
 
