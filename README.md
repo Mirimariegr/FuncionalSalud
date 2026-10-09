@@ -41,6 +41,10 @@ Al hacer push a `main`, el workflow `.github/workflows/deploy.yml` publica la de
 
 **Portal del paciente** (responsive, sin instalar nada): recetas activas con pantalla «Mostrar en la farmacia», chat y solicitudes a administración, próxima cita con confirmar / cambiar / cancelar, pedir cita en huecos realmente libres, documentos publicados, firma de consentimientos con verificación OTP simulada, tratamientos y evolución, presupuestos (aceptar y pago online simulado), datos personales, preferencias de comunicación, declaración de alergias o medicación para revisión y solicitud de derechos RGPD.
 
+## EOS · Subida de documentos a Google Sheet
+
+Página independiente en `public/eos/index.html`, publicada en https://mirimariegr.github.io/FuncionalSalud/eos/. Envía cada PDF o imagen al webhook de n8n `eos-documento` (workflow «EOS · Documento a Google Sheet»), donde Claude extrae tipo de documento, paciente, DNI/NIE, fecha, profesional, centro, diagnóstico, importe y resumen, y se añade una fila en la pestaña **Documentos** del Sheet **EOS**. Para probar con la URL de test de n8n: `.../eos/?webhook=<url-de-test>`.
+
 ## Guion sugerido para la demo
 
 1. **Recepción (Silvia Ramos)**: Inicio → alertas → *Nuevo paciente* escribiendo «María García López» para ver la detección de duplicados → *Nueva cita* en un hueco ocupado para ver el control de solapes.
